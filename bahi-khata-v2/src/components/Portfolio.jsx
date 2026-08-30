@@ -156,7 +156,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
                 {type === 'mf' && (
                   <>
                     <p className="text-on-surface-variant text-sm">
-                      Units: <span className="font-data-lg">{h.units.toFixed(3)}</span>
+                      Units: <span className="font-data-lg">{Number(h.units || 0).toFixed(3)}</span>
                     </p>
                     <p className="text-on-surface-variant text-sm">
                       Buy NAV: <span className="font-data-lg">{formatCurrency(h.buy_nav)}</span>
@@ -194,7 +194,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
                 {type === 'crypto' && (
                   <>
                     <p className="text-on-surface-variant text-sm">
-                      Amount: <span className="font-data-lg">{h.quantity.toFixed(8)}</span>
+                      Amount: <span className="font-data-lg">{Number(h.quantity || 0).toFixed(8)}</span>
                     </p>
                     <p className="text-on-surface-variant text-sm">
                       Buy Price: <span className="font-data-lg">{formatCurrency(h.buy_price)}</span>
