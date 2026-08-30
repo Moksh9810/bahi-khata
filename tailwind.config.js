@@ -46,12 +46,10 @@ export default {
       success: 'rgb(var(--success) / <alpha-value>)',
       'success-glow': 'rgb(var(--success-glow) / <alpha-value>)',
     },
-    borderRadius: {
-      DEFAULT: "0.25rem",
-      lg: "0.5rem",
-      xl: "0.75rem",
-      full: "9999px"
-    },
+    // NOTE: these live under `extend` so Tailwind's own scales
+    // (p-8, py-3, text-sm, rounded-2xl, gap-3 ...) stay available.
+    // Putting them at theme root replaced the defaults and stripped all spacing.
+    extend: {
     spacing: {
       unit: "8px",
       gutter: "24px",
@@ -76,6 +74,7 @@ export default {
       "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
       "headline-md": ["28px", { lineHeight: "36px", letterSpacing: "-0.005em", fontWeight: "600" }],
       "display-md": ["45px", { lineHeight: "52px", letterSpacing: "-0.02em", fontWeight: "700" }],
+    }
     }
   },
   plugins: [],
