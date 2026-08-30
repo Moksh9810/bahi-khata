@@ -6,7 +6,7 @@ import { SkeletonDashboard, SkeletonChart } from './Skeleton';
 import { EmptyDashboard } from './EmptyState';
 import { usePortfolioStats, useCategoryPerformance } from '../utils/performance';
 
-function DashboardContent({ portfolio, stats, isLoading }) {
+function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
   const portfolioStats = usePortfolioStats(portfolio);
   const categoryPerformance = useCategoryPerformance(portfolio);
 
@@ -64,16 +64,19 @@ function DashboardContent({ portfolio, stats, isLoading }) {
       {/* Category Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Stocks', icon: 'show_chart', color: 'text-primary', data: 'stocks', suffix: 's' },
-          { label: 'Mutual Funds', icon: 'account_balance', color: 'text-secondary', data: 'mf', suffix: 's' },
-          { label: 'Bonds', icon: 'payments', color: 'text-tertiary', data: 'bonds', suffix: 's' },
-          { label: 'Loans', icon: 'real_estate_agent', color: 'text-error', data: 'loans', suffix: 's' },
-          { label: 'Crypto', icon: 'currency_bitcoin', color: 'text-yellow-500', data: 'crypto', suffix: '' },
-          { label: 'Gold', icon: 'diamond', color: 'text-amber-500', data: 'gold', suffix: '' },
-          { label: 'Properties', icon: 'apartment', color: 'text-green-500', data: 'properties', suffix: '' },
-          { label: 'Fixed Deposits', icon: 'savings', color: 'text-blue-500', data: 'fds', suffix: '' }
+          { label: 'Stocks', icon: 'show_chart', color: 'text-primary', data: 'stocks' },
+          { label: 'Mutual Funds', icon: 'account_balance', color: 'text-secondary', data: 'mf' },
+          { label: 'Bonds', icon: 'payments', color: 'text-tertiary', data: 'bonds' },
+          { label: 'Loans', icon: 'real_estate_agent', color: 'text-error', data: 'loans' },
+          { label: 'Crypto', icon: 'currency_bitcoin', color: 'text-yellow-500', data: 'crypto' },
+          { label: 'Gold', icon: 'diamond', color: 'text-amber-500', data: 'gold' },
+          { label: 'Properties', icon: 'apartment', color: 'text-green-500', data: 'properties' },
+          { label: 'Fixed Deposits', icon: 'savings', color: 'text-blue-500', data: 'fds' }
         ].map((cat) => {
-          const holdings = portfolio[cat.data + cat.suffix] || [];
+          // `data` is already the portfolio key. The old code appended an 's'
+          // and read portfolio['stockss'] / portfolio['mfs'], so every card
+          // showed zero however much was actually held.
+          const holdings = portfolio[cat.data] || [];
           let invested = 0, current = 0;
 
           holdings.forEach(h => {
@@ -102,7 +105,11 @@ function DashboardContent({ portfolio, stats, isLoading }) {
           const pct = invested > 0 ? ((pl / invested) * 100).toFixed(1) : 0;
 
           return (
-            <div key={cat.data} className="glass-panel rounded-xl p-5 flex flex-col gap-3"
+            <button
+              key={cat.data}
+              type="button"
+              onClick={() => onSelectTab && onSelectTab(cat.data)}
+              className="glass-panel rounded-xl p-5 flex flex-col gap-3 text-left hover:ring-2 hover:ring-primary/40"
               style={{
                 background: 'rgba(31,31,41,0.4)',
                 backdropFilter: 'blur(20px)',
@@ -124,7 +131,7 @@ function DashboardContent({ portfolio, stats, isLoading }) {
                 <p className="text-on-surface-variant text-sm">{cat.label}</p>
                 <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(current)}</p>
               </div>
-            </div>
+            </button>
           );
         })}
       </div>

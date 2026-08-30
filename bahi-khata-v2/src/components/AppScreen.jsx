@@ -117,7 +117,7 @@ export default function AppScreen({
       {/* MAIN CONTENT */}
       <main className="pt-20 px-5 md:ml-72 pb-24 md:px-8 max-w-7xl mx-auto flex flex-col gap-8">
         {activeTab === 'dashboard' && (
-          <Dashboard portfolio={portfolio} stats={stats} />
+          <Dashboard portfolio={portfolio} stats={stats} onSelectTab={setActiveTab} />
         )}
 
         {['stocks', 'mf', 'bonds', 'loans', 'crypto', 'gold', 'properties', 'fds'].includes(activeTab) && (
