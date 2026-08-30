@@ -38,6 +38,15 @@ export const useAuth = () => {
     setLoading(true);
     try {
       const data = await authService.signup(email, password);
+
+      // When email confirmation is switched on, Supabase returns a user but no
+      // session. Treating that as "logged in" showed the app while the database
+      // still saw an anonymous request, so every save failed with a row-level
+      // security error. Only sign the user in once a real session exists.
+      if (!data.session) {
+        throw new Error('Please check your email and confirm your address, then log in.');
+      }
+
       setUser(data.user);
       setCurrentUser(data.user);
       return data;
