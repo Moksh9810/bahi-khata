@@ -44,19 +44,25 @@ export const holdingsService = {
   },
 
   async addHolding(userId, holding) {
+    // .select() is required: without it supabase-js returns data: null on an
+    // insert, so the caller got `undefined` and pushed it into the portfolio
+    // list — which crashed the app on the next render (white screen).
     const { data, error } = await supabase
       .from('holdings')
-      .insert([{ ...holding, user_id: userId }]);
+      .insert([{ ...holding, user_id: userId }])
+      .select();
 
     if (error) throw error;
-    return data?.[0];
+    if (!data?.[0]) throw new Error('Holding was not saved. Please try again.');
+    return data[0];
   },
 
   async updateHolding(id, updates) {
     const { data, error } = await supabase
       .from('holdings')
       .update(updates)
-      .eq('id', id);
+      .eq('id', id)
+      .select();
 
     if (error) throw error;
     return data?.[0];
