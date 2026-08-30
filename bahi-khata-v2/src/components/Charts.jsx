@@ -4,24 +4,24 @@ import { formatCurrency } from '../utils/formatters';
 import { SkeletonChart } from './Skeleton';
 
 function PortfolioGrowthChartComponent({ portfolio, stats, isLoading }) {
-  if (isLoading) return <SkeletonChart />;
-  // Generate 12 months of mock growth data
-  const generateGrowthData = () => {
-    const data = [];
-    const currentValue = stats.currentValue;
-    const invested = stats.invested;
+  // Generate 12 months of mock growth data.
+  // NOTE: hooks must run on every render, so this stays above the isLoading early return.
+  const data = useMemo(() => {
+    const rows = [];
+    const currentValue = stats?.currentValue ?? 0;
+    const invested = stats?.invested ?? 0;
     const monthlyGrowth = (currentValue - invested) / 12;
 
     for (let i = 0; i < 12; i++) {
-      data.push({
+      rows.push({
         month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][i],
         value: invested + (monthlyGrowth * (i + 1))
       });
     }
-    return data;
-  };
+    return rows;
+  }, [stats?.currentValue, stats?.invested]);
 
-  const data = useMemo(() => generateGrowthData(), [stats.currentValue, stats.invested]);
+  if (isLoading) return <SkeletonChart />;
 
   return (
     <div className="glass-panel rounded-xl p-6 w-full" style={{

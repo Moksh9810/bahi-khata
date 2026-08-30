@@ -7,6 +7,7 @@ export const usePortfolio = (userId) => {
   const setPortfolio = usePortfolioStore(state => state.setPortfolio);
   const setLoading = usePortfolioStore(state => state.setLoading);
   const setError = usePortfolioStore(state => state.setError);
+  const error = usePortfolioStore(state => state.error);
   const addHolding = usePortfolioStore(state => state.addHolding);
   const removeHolding = usePortfolioStore(state => state.removeHolding);
   const updateHolding = usePortfolioStore(state => state.updateHolding);
