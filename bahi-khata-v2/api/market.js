@@ -138,6 +138,73 @@ export default async function handler(req, res) {
       return res.status(200).json({ results });
     }
 
+    // Batch refresh: items=stock:HDFCBANK.NS|mf:120503|crypto:bitcoin
+    // One request for the whole portfolio instead of one per holding.
+    if (action === 'quotes') {
+      const items = String(req.query.items || '')
+        .split('|')
+        .filter(Boolean)
+        .map(s => {
+          const i = s.indexOf(':');
+          return { key: s, type: s.slice(0, i), id: s.slice(i + 1) };
+        })
+        .slice(0, 60); // sanity cap
+
+      const prices = {};
+
+      // --- crypto: one call for every coin
+      const cryptoItems = items.filter(i => i.type === 'crypto');
+      if (cryptoItems.length) {
+        // Older rows stored a ticker (BTC) rather than CoinGecko's slug.
+        const resolved = await Promise.all(cryptoItems.map(async item => {
+          if (/^[a-z0-9-]+$/.test(item.id) && item.id === item.id.toLowerCase()) return { item, cg: item.id };
+          const hits = await cryptoSearch(item.id).catch(() => []);
+          return { item, cg: hits[0] ? hits[0].id : null };
+        }));
+
+        const ids = [...new Set(resolved.map(r => r.cg).filter(Boolean))];
+        if (ids.length) {
+          const r = await fetch(
+            `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=inr`,
+            { headers: { 'User-Agent': UA } }
+          );
+          const map = r.ok ? await r.json() : {};
+          for (const { item, cg } of resolved) {
+            const p = cg && map[cg] && map[cg].inr;
+            if (typeof p === 'number') prices[item.key] = p;
+          }
+        }
+      }
+
+      // --- mutual funds: the AMFI file is already parsed and cached
+      const mfItems = items.filter(i => i.type === 'mf');
+      if (mfItems.length) {
+        const schemes = await getAmfiSchemes().catch(() => []);
+        for (const item of mfItems) {
+          // Stored value may be the scheme code, or the scheme name for older rows.
+          const hit = /^\d+$/.test(item.id)
+            ? schemes.find(s => s.code === item.id)
+            : schemes.find(s => s.name.toLowerCase() === item.id.toLowerCase());
+          if (hit) prices[item.key] = hit.nav;
+        }
+      }
+
+      // --- stocks: Yahoo has no reliable free batch endpoint, so fetch in parallel
+      const stockItems = items.filter(i => i.type === 'stock');
+      await Promise.all(stockItems.map(async item => {
+        // Older rows stored a bare ticker; default it to the NSE listing.
+        const symbol = /\.(NS|BO)$/.test(item.id) ? item.id : `${item.id}.NS`;
+        try {
+          const q = await yahooQuote(symbol);
+          prices[item.key] = q.price;
+        } catch {
+          // one bad symbol must not sink the whole refresh
+        }
+      }));
+
+      return res.status(200).json({ prices, at: new Date().toISOString() });
+    }
+
     if (action === 'quote') {
       const key = String(id).trim();
       if (!key) return res.status(400).json({ error: 'id is required' });
