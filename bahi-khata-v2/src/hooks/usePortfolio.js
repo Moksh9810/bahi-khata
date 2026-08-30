@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { holdingsService } from '../services/supabase';
 import { usePortfolioStore } from '../store/portfolioStore';
 
@@ -12,6 +12,7 @@ export const usePortfolio = (userId) => {
   const removeHolding = usePortfolioStore(state => state.removeHolding);
   const updateHolding = usePortfolioStore(state => state.updateHolding);
   const getStats = usePortfolioStore(state => state.getStats);
+  const [pricesUpdatedAt, setPricesUpdatedAt] = useState(null);
 
   // Load portfolio on mount or when userId changes
   useEffect(() => {
@@ -103,6 +104,68 @@ export const usePortfolio = (userId) => {
     }
   };
 
+  // ---- live prices -------------------------------------------------------
+  // Which buckets can be priced, and where the price belongs in each row.
+  const PRICED = {
+    stocks: { source: 'stock', field: 'current_price' },
+    mf: { source: 'mf', field: 'current_nav' },
+    crypto: { source: 'crypto', field: 'current_price' }
+  };
+
+  const refreshPrices = async () => {
+    const current = usePortfolioStore.getState().portfolio;
+
+    // Build one request key per holding: "stock:TCS.NS", "mf:120503", ...
+    const items = [];
+    for (const [bucket, cfg] of Object.entries(PRICED)) {
+      for (const h of current[bucket] || []) {
+        // quote_id is set when the holding is picked from search. Rows added
+        // before that existed fall back to whatever name we have.
+        const id = h.quote_id || h.symbol || h.scheme;
+        if (id) items.push(`${cfg.source}:${id}`);
+      }
+    }
+    if (!items.length) return;
+
+    let prices;
+    try {
+      const res = await fetch(`/api/market?action=quotes&items=${encodeURIComponent(items.join('|'))}`);
+      if (!res.ok) return;
+      ({ prices } = await res.json());
+    } catch {
+      return; // offline or the feed is down — keep showing the last known prices
+    }
+    if (!prices || !Object.keys(prices).length) return;
+
+    const updated = { ...current };
+    for (const [bucket, cfg] of Object.entries(PRICED)) {
+      updated[bucket] = (current[bucket] || []).map(h => {
+        const id = h.quote_id || h.symbol || h.scheme;
+        const p = prices[`${cfg.source}:${id}`];
+        return typeof p === 'number' ? { ...h, [cfg.field]: p } : h;
+      });
+    }
+
+    setPortfolio(updated);
+    setPricesUpdatedAt(new Date());
+  };
+
+  // Keep a ref so the interval below always calls the latest version.
+  const refreshRef = useRef(refreshPrices);
+  refreshRef.current = refreshPrices;
+
+  useEffect(() => {
+    if (!userId) return undefined;
+    const tick = () => refreshRef.current();
+    // Once shortly after the portfolio has loaded, then every minute while open.
+    const first = setTimeout(tick, 1500);
+    const timer = setInterval(tick, 60000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
+  }, [userId]);
+
   const stats = getStats();
 
   return {
@@ -112,6 +175,8 @@ export const usePortfolio = (userId) => {
     removeHolding: deleteHolding,
     updateHolding: updateHoldingData,
     loadPortfolio,
+    refreshPrices,
+    pricesUpdatedAt,
     error
   };
 };
