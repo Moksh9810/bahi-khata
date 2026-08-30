@@ -10,7 +10,10 @@ import './index.css';
 
 export default function App() {
   const { user, loading: authLoading, signin, signup, logout } = useAuth();
-  const { portfolio, stats, addHolding, removeHolding, updateHolding } = usePortfolio(user?.id);
+  const {
+    portfolio, stats, addHolding, removeHolding, updateHolding,
+    refreshPrices, pricesUpdatedAt
+  } = usePortfolio(user?.id);
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -58,6 +61,8 @@ export default function App() {
       onAddHolding={addHolding}
       onRemoveHolding={removeHolding}
       onUpdateHolding={updateHolding}
+      onRefreshPrices={refreshPrices}
+      pricesUpdatedAt={pricesUpdatedAt}
       onLogout={logout}
     />
   );
