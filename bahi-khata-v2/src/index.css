@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light mode color variables - Using RGB for Tailwind v4 compatibility */
+:root {
+  --primary: 109 59 215;
+  --on-primary: 255 255 255;
+  --primary-container: 234 221 255;
+  --on-primary-container: 35 0 92;
+
+  --secondary: 10 108 124;
+  --on-secondary: 255 255 255;
+  --secondary-container: 172 237 255;
+  --on-secondary-container: 0 31 38;
+
+  --tertiary: 109 59 0;
+  --on-tertiary: 255 255 255;
+  --tertiary-container: 255 221 184;
+  --on-tertiary-container: 42 23 0;
+
+  --background: 255 251 254;
+  --on-background: 31 27 32;
+  --surface: 255 251 254;
+  --on-surface: 31 27 32;
+
+  --surface-container-lowest: 255 255 255;
+  --surface-container-low: 247 242 247;
+  --surface-container: 243 238 243;
+  --surface-container-high: 237 232 237;
+  --surface-container-highest: 231 224 231;
+
+  --surface-variant: 231 224 236;
+  --on-surface-variant: 73 69 78;
+
+  --error: 179 38 30;
+  --on-error: 255 255 255;
+  --error-container: 249 222 220;
+  --on-error-container: 65 14 11;
+
+  --outline: 121 116 126;
+  --outline-variant: 202 199 208;
+
+  --inverse-surface: 49 48 51;
+  --inverse-on-surface: 244 239 244;
+  --inverse-primary: 208 188 255;
+
+  --success: 45 125 45;
+  --success-glow: rgba(45, 125, 45, 0.2);
+}
+
+/* Dark mode color variables - Using RGB for Tailwind v4 compatibility */
+.dark {
+  --primary: 208 188 255;
+  --on-primary: 60 0 145;
+  --primary-container: 160 120 255;
+  --on-primary-container: 35 0 92;
+
+  --secondary: 76 215 246;
+  --on-secondary: 0 54 64;
+  --secondary-container: 3 181 211;
+  --on-secondary-container: 0 31 38;
+
+  --tertiary: 255 185 95;
+  --on-tertiary: 71 42 0;
+  --tertiary-container: 202 129 0;
+  --on-tertiary-container: 42 23 0;
+
+  --background: 18 18 29;
+  --on-background: 228 225 240;
+  --surface: 18 18 29;
+  --on-surface: 228 225 240;
+
+  --surface-container-lowest: 13 13 23;
+  --surface-container-low: 27 27 37;
+  --surface-container: 31 31 41;
+  --surface-container-high: 41 41 52;
+  --surface-container-highest: 52 52 63;
+
+  --surface-variant: 52 52 63;
+  --on-surface-variant: 203 195 215;
+
+  --error: 255 180 171;
+  --on-error: 105 0 5;
+  --error-container: 147 0 10;
+  --on-error-container: 255 218 214;
+
+  --outline: 149 142 160;
+  --outline-variant: 73 68 84;
+
+  --inverse-surface: 228 225 240;
+  --inverse-on-surface: 48 47 59;
+  --inverse-primary: 109 59 215;
+
+  --success: 74 222 128;
+  --success-glow: rgba(74, 222, 128, 0.3);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Smooth transition for theme changes */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    transition: background-color 0.3s, color 0.3s;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--surface-container);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--outline-variant);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
