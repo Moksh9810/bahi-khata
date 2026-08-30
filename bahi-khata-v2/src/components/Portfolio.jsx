@@ -67,6 +67,9 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
     setFormData(prev => ({
       ...prev,
       [cfg.nameField]: nameValue,
+      // Store the provider's own id (TCS.NS, 120503, bitcoin) so prices can be
+      // refreshed later — the display name alone is not enough to look it up.
+      quote_id: asset.id,
       // Leave the price field alone if the lookup failed, so the user can fill it.
       ...(asset.price != null ? { [cfg.priceField]: asset.price } : {})
     }));

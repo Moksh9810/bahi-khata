@@ -15,9 +15,12 @@ export default function AppScreen({
   onAddHolding,
   onRemoveHolding,
   onUpdateHolding,
+  onRefreshPrices,
+  pricesUpdatedAt,
   onLogout
 }) {
   const [navOpen, setNavOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { theme, toggleTheme, isDark } = useTheme();
 
   const tabs = [
@@ -52,6 +55,27 @@ export default function AppScreen({
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          {pricesUpdatedAt && (
+            <span className="hidden sm:inline text-on-surface-variant text-xs">
+              Prices {pricesUpdatedAt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            </span>
+          )}
+          <button
+            onClick={async () => {
+              if (refreshing) return;
+              setRefreshing(true);
+              try {
+                await onRefreshPrices?.();
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+            className="text-primary p-2 hover:bg-on-surface/10 rounded-full transition-colors disabled:opacity-50"
+            disabled={refreshing}
+            title="Refresh prices"
+          >
+            <span className={`material-symbols-outlined ${refreshing ? 'animate-spin' : ''}`}>refresh</span>
+          </button>
           <button
             onClick={toggleTheme}
             className="text-primary p-2 hover:bg-on-surface/10 rounded-full transition-colors"
