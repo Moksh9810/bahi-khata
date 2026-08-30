@@ -1,6 +1,17 @@
 import { useState } from 'react';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { formSchemas, assetTypeLabels, assetTypeIcons } from '../utils/formSchemas';
+import AssetSearch from './AssetSearch';
+
+// Asset types we can look up live. `nameField` is the form field the picked
+// name goes into; `priceField` is filled with the fetched price.
+// Types absent from this map (bonds, loans, gold, property, FD) have no public
+// price feed, so their fields stay plain text inputs.
+const SEARCHABLE = {
+  stocks: { source: 'stock', nameField: 'symbol', priceField: 'current_price' },
+  mf: { source: 'mf', nameField: 'scheme', priceField: 'current_nav' },
+  crypto: { source: 'crypto', nameField: 'symbol', priceField: 'current_price' }
+};
 
 export default function Portfolio({ type, holdings, onAdd, onRemove }) {
   const [showModal, setShowModal] = useState(false);
@@ -39,6 +50,28 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
       console.error('Error adding holding:', error);
       setErrors({ submit: error.message || 'Failed to add holding' });
     }
+  };
+
+  // Fired when the user picks a suggestion from AssetSearch.
+  const handleAssetPicked = (asset) => {
+    const cfg = SEARCHABLE[type];
+    if (!cfg) return;
+
+    // Stocks come back as "TCS.NS" — store the plain ticker.
+    // Crypto: prefer the ticker (BTC) over CoinGecko's slug (bitcoin).
+    let nameValue;
+    if (cfg.source === 'stock') nameValue = String(asset.id).replace(/\.(NS|BO)$/, '');
+    else if (cfg.source === 'crypto') nameValue = asset.sub || asset.name;
+    else nameValue = asset.name;
+
+    setFormData(prev => ({
+      ...prev,
+      [cfg.nameField]: nameValue,
+      // Leave the price field alone if the lookup failed, so the user can fill it.
+      ...(asset.price != null ? { [cfg.priceField]: asset.price } : {})
+    }));
+
+    setErrors(prev => ({ ...prev, [cfg.nameField]: undefined }));
   };
 
   const handleInputChange = (e) => {
@@ -254,6 +287,14 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
               {/* Dynamic form fields based on asset type */}
               {formSchemas[type].map(field => (
                 <div key={field.name}>
+                  {SEARCHABLE[type] && SEARCHABLE[type].nameField === field.name ? (
+                    <AssetSearch
+                      type={SEARCHABLE[type].source}
+                      value={formData[field.name] || ''}
+                      placeholder={field.placeholder}
+                      onSelect={handleAssetPicked}
+                    />
+                  ) : (
                   <input
                     type={field.type}
                     name={field.name}
@@ -271,6 +312,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
                     }}
                     required={field.required}
                   />
+                  )}
                   {errors[field.name] && (
                     <p className="text-error text-xs mt-1">{errors[field.name]}</p>
                   )}
