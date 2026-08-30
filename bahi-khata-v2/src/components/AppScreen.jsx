@@ -99,11 +99,7 @@ export default function AppScreen({
         {['stocks', 'mf', 'bonds', 'loans', 'crypto', 'gold', 'properties', 'fds'].includes(activeTab) && (
           <Portfolio
             type={activeTab}
-            holdings={
-              activeTab === 'properties' || activeTab === 'fds' || activeTab === 'crypto' || activeTab === 'gold'
-                ? portfolio[activeTab] || []
-                : portfolio[activeTab + 's'] || []
-            }
+            holdings={portfolio[activeTab] || []}
             stats={stats}
             onAdd={onAddHolding}
             onRemove={onRemoveHolding}
