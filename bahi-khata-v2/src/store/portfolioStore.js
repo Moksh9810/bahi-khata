@@ -22,16 +22,15 @@ export const usePortfolioStore = create((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
-  // Helper to get key with proper pluralization
-  getPortfolioKey: (type) => {
-    if (['crypto', 'gold', 'properties', 'fds'].includes(type)) {
-      return type;
-    }
-    return type + 's';
-  },
+  // The UI already passes the portfolio key itself ('stocks', 'mf', 'fds' ...),
+  // so nothing needs pluralising. The old version appended an 's' and produced
+  // 'stockss' / 'bondss' — a bucket nothing ever read, so freshly added
+  // holdings vanished until a page reload.
+  getPortfolioKey: (type) => type,
 
   // Add holding
   addHolding: (type, holding) => {
+    if (!holding) return; // never let an empty row into the list
     const key = get().getPortfolioKey(type);
     set((state) => ({
       portfolio: {
