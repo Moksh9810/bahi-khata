@@ -138,6 +138,49 @@ export default async function handler(req, res) {
       return res.status(200).json({ results });
     }
 
+    // Index history for benchmark comparison.
+    // /api/market?action=benchmark&index=nifty50&range=5y
+    if (action === 'benchmark') {
+      const INDEXES = {
+        nifty50: { symbol: '^NSEI', label: 'NIFTY 50', currency: 'INR' },
+        sensex: { symbol: '^BSESN', label: 'BSE SENSEX', currency: 'INR' },
+        niftynext50: { symbol: '^NSMIDCP', label: 'NIFTY Midcap', currency: 'INR' },
+        sp500: { symbol: '^GSPC', label: 'S&P 500', currency: 'USD' },
+        nasdaq: { symbol: '^IXIC', label: 'NASDAQ Composite', currency: 'USD' }
+      };
+
+      const key = String(req.query.index || 'nifty50').toLowerCase();
+      const idx = INDEXES[key];
+      if (!idx) {
+        return res.status(400).json({ error: `Unknown index. Try: ${Object.keys(INDEXES).join(', ')}` });
+      }
+
+      const range = ['1y', '2y', '5y', '10y', 'max'].includes(req.query.range) ? req.query.range : '5y';
+      const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(idx.symbol)}?interval=1d&range=${range}`;
+      const r = await fetch(url, { headers: { 'User-Agent': UA } });
+      if (!r.ok) throw new Error(`Index feed returned ${r.status}`);
+
+      const result = (await r.json())?.chart?.result?.[0];
+      const stamps = result?.timestamp || [];
+      const closes = result?.indicators?.quote?.[0]?.close || [];
+
+      // Yahoo leaves nulls on non-trading days; drop them rather than carrying
+      // a gap into the maths.
+      const series = stamps
+        .map((t, i) => ({ date: t * 1000, close: closes[i] }))
+        .filter(p => typeof p.close === 'number');
+
+      if (!series.length) throw new Error('Index feed returned no usable points');
+
+      return res.status(200).json({
+        index: key,
+        label: idx.label,
+        currency: idx.currency,
+        latest: series[series.length - 1].close,
+        series
+      });
+    }
+
     // Batch refresh: items=stock:HDFCBANK.NS|mf:120503|crypto:bitcoin
     // One request for the whole portfolio instead of one per holding.
     if (action === 'quotes') {

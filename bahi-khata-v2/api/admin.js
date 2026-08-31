@@ -15,7 +15,7 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const ROLES = ['user', 'support', 'manager', 'super_admin'];
 const STATUSES = ['active', 'suspended', 'blocked'];
-const PLANS = ['free', 'premium'];
+const PLANS = ['free', 'pro', 'premium']; // 'premium' kept so old rows still validate
 
 // Who may do what.
 const CAN = {
@@ -180,7 +180,8 @@ export default async function handler(req, res) {
 
       return res.status(200).json({
         totalUsers: (profiles || []).length,
-        premiumUsers: (profiles || []).filter(p => p.plan === 'premium').length,
+        // Rows predating the rename still say 'premium'; count both.
+        premiumUsers: (profiles || []).filter(p => p.plan === 'pro' || p.plan === 'premium').length,
         blockedUsers: (profiles || []).filter(p => p.status !== 'active').length,
         newUsers7d: (profiles || []).filter(p => new Date(p.created_at).getTime() > since(7)).length,
         dau: activeSince(1),
