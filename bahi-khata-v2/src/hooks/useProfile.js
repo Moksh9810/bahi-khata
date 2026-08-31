@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
+import { can, normalisePlan } from '../utils/plans';
 
 // Reads the signed-in user's own profile row (role, status, plan).
 // Row-level security means this can only ever return the caller's own row —
@@ -36,13 +37,18 @@ export function useProfile(userId) {
   }, [userId]);
 
   const role = profile?.role || 'user';
+  // Rows written before the rename still say 'premium'; normalisePlan folds
+  // that into 'pro' so the rest of the app only ever sees free | pro.
+  const plan = normalisePlan(profile?.plan);
 
   return {
     profile,
     loaded,
     role,
+    plan,
+    isPro: plan === 'pro',
+    can: feature => can(plan, feature),
     isAdmin: ['support', 'manager', 'super_admin'].includes(role),
-    isPremium: profile?.plan === 'premium',
     isRestricted: profile ? profile.status !== 'active' : false
   };
 }
