@@ -57,6 +57,26 @@ export const holdingsService = {
     return data[0];
   },
 
+  // Bulk insert for the import screen. Sent in batches so a large portfolio
+  // does not arrive as one oversized request.
+  async addHoldings(userId, holdings) {
+    const saved = [];
+    const BATCH = 50;
+
+    for (let i = 0; i < holdings.length; i += BATCH) {
+      const chunk = holdings.slice(i, i + BATCH).map(h => ({ ...h, user_id: userId }));
+      const { data, error } = await supabase.from('holdings').insert(chunk).select();
+      if (error) {
+        // Report how far it got, so the user knows what is already saved.
+        const e = new Error(`${error.message} (${saved.length} of ${holdings.length} saved)`);
+        e.savedCount = saved.length;
+        throw e;
+      }
+      saved.push(...(data || []));
+    }
+    return saved;
+  },
+
   async updateHolding(id, updates) {
     const { data, error } = await supabase
       .from('holdings')
