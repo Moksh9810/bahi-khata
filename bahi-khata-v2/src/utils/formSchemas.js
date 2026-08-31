@@ -17,20 +17,22 @@ export const formSchemas = {
   ],
 
   bonds: [
-    { name: 'name', label: 'Bond Name', type: 'text', placeholder: 'e.g., Government Securities 7%', required: true },
-    { name: 'quantity', label: 'Face Value (₹)', type: 'number', placeholder: 'Total face value', required: true },
-    { name: 'buy_price', label: 'Purchase Price (₹)', type: 'number', placeholder: 'Price at purchase', step: 0.01, required: true },
-    { name: 'coupon_rate', label: 'Coupon Rate (%)', type: 'number', placeholder: '5.5', step: 0.01, required: true },
-    { name: 'maturity_date', label: 'Maturity Date', type: 'date', required: true },
-    { name: 'purchase_date', label: 'Purchase Date', type: 'date', required: false },
+    { name: 'name', label: 'Bond Name', type: 'text', placeholder: 'e.g., SGB 2028', required: true },
+    { name: 'quantity', label: 'Quantity', type: 'number', placeholder: 'Total units/bonds', required: true },
+    { name: 'buy_price', label: 'Buy Price / Face Value (₹)', type: 'number', placeholder: 'Price per unit', step: 0.01, required: true },
+    { name: 'purchase_date', label: 'Purchase Date', type: 'date', required: true },
+    { name: 'interest_rate', label: 'Interest Rate (%)', type: 'number', placeholder: 'Annual rate (e.g., 5.5)', step: 0.01, required: false },
+    { name: 'payout_frequency', label: 'Payout Frequency', type: 'select', options: ['Cumulative (At Maturity)', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'], required: true },
+    { name: 'current_price', label: 'Current Market Price (₹)', type: 'number', placeholder: 'Manual current price', step: 0.01, required: false }
   ],
 
   loans: [
-    { name: 'name', label: 'Loan Description', type: 'text', placeholder: 'e.g., Personal Loan to Friend', required: true },
-    { name: 'quantity', label: 'Amount Lent (₹)', type: 'number', placeholder: 'Total amount', required: true },
-    { name: 'buy_price', label: 'Interest Rate (%)', type: 'number', placeholder: 'Annual rate', step: 0.01, required: true },
-    { name: 'maturity_date', label: 'Due Date', type: 'date', required: true },
-    { name: 'purchase_date', label: 'Purchase Date', type: 'date', required: false },
+    { name: 'name', label: 'Borrower Name / Loan Title', type: 'text', placeholder: 'e.g., Personal Loan', required: true },
+    { name: 'quantity', label: 'Principal Amount (₹)', type: 'number', placeholder: 'Amount lent', required: true },
+    { name: 'purchase_date', label: 'Issue Date', type: 'date', required: true },
+    { name: 'interest_rate', label: 'Interest Rate (%)', type: 'number', placeholder: 'Annual rate', step: 0.01, required: false },
+    { name: 'payout_frequency', label: 'Return Type', type: 'select', options: ['Monthly Fixed (EMI)', 'Quarterly', 'Yearly', 'At Maturity'], required: true },
+    { name: 'payout_amount', label: 'Fixed Return Amount (₹)', type: 'number', placeholder: 'EMI or payout amount', step: 0.01, required: false }
   ],
 
   crypto: [
@@ -42,8 +44,6 @@ export const formSchemas = {
   ],
 
   gold: [
-    // Write the purity into the name — "22K bangles", "24K coins" — and the
-    // live rate is adjusted for it. Anything unmarked is priced as 24K.
     { name: 'name', label: 'Gold Type', type: 'text', placeholder: 'e.g., 22K jewellery, 24K coins, SGB', required: true },
     { name: 'quantity', label: 'Quantity (grams)', type: 'number', placeholder: 'Weight in grams', step: 0.01, required: true },
     { name: 'buy_price', label: 'Buy Price (₹/gram)', type: 'number', placeholder: 'Price per gram', step: 0.01, required: true },

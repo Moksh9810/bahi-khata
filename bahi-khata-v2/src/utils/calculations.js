@@ -173,3 +173,43 @@ export const getRebalancingAdvice = (portfolio, targetAllocation) => {
 
   return advice;
 };
+
+// Groups identical holdings (e.g. same stock bought on different dates) for display
+export const groupHoldingsForDisplay = (holdingsArray, assetType) => {
+  if (!holdingsArray || !Array.isArray(holdingsArray)) return [];
+  const grouped = {};
+
+  holdingsArray.forEach(h => {
+    // Unique identifier fallback mapping
+    const uniqueKey = h.symbol || h.scheme || h.name;
+    const key = `${assetType}_${uniqueKey}`;
+
+    if (!grouped[key]) {
+      grouped[key] = { ...h };
+    } else {
+      // Dynamic fields to handle both Stocks (quantity/buy_price) and MF (units/buy_nav)
+      const qtyField = h.units !== undefined ? 'units' : 'quantity';
+      const buyPriceField = h.buy_nav !== undefined ? 'buy_nav' : 'buy_price';
+      const currentPriceField = h.current_nav !== undefined ? 'current_nav' : 'current_price';
+
+      const currentQty = grouped[key][qtyField] || 0;
+      const newQty = h[qtyField] || 0;
+      const currentBuyPrice = grouped[key][buyPriceField] || 0;
+      const newBuyPrice = h[buyPriceField] || 0;
+
+      // Calculate weighted average buy price
+      const totalCost = (currentQty * currentBuyPrice) + (newQty * newBuyPrice);
+      const totalUnits = currentQty + newQty;
+
+      grouped[key][qtyField] = totalUnits;
+      grouped[key][buyPriceField] = totalUnits > 0 ? (totalCost / totalUnits) : 0;
+
+      // Update with the most recent current_price/nav if available
+      if (h[currentPriceField]) {
+        grouped[key][currentPriceField] = h[currentPriceField];
+      }
+    }
+  });
+
+  return Object.values(grouped);
+};
