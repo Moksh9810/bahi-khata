@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { useProfile } from './hooks/useProfile';
 import { useCheckout } from './hooks/useCheckout';
 import { usePortfolio } from './hooks/usePortfolio';
+import { usePortfolioList } from './hooks/usePortfolioList';
 import { useTheme } from './hooks/useTheme';
 import AuthScreen from './components/AuthScreen';
 import AppScreen from './components/AppScreen';
@@ -12,10 +13,11 @@ import './index.css';
 
 export default function App() {
   const { user, loading: authLoading, signin, signup, logout } = useAuth();
+  const portfolioList = usePortfolioList(user?.id);
   const {
     portfolio, stats, addHolding, importHoldings, removeHolding, updateHolding,
     refreshPrices, pricesUpdatedAt, loaded: portfolioLoaded
-  } = usePortfolio(user?.id);
+  } = usePortfolio(user?.id, portfolioList.activeId);
   const { role, isAdmin, isPro, isRestricted, loaded: profileLoaded, reload: reloadProfile } = useProfile(user?.id);
   const { checkout, paymentsAvailable } = useCheckout({ user, onUpgraded: reloadProfile });
   const { theme } = useTheme();
@@ -103,6 +105,7 @@ export default function App() {
       isAdmin={isAdmin}
       myRole={role}
       isPro={isPro}
+      portfolioList={portfolioList}
       onCheckout={checkout}
       paymentsAvailable={paymentsAvailable}
       onLogout={logout}
