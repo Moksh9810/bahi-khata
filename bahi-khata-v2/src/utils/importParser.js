@@ -23,8 +23,51 @@ const ALIASES = {
   current: [
     'lastprice', 'ltp', 'currentprice', 'marketprice', 'closeprice', 'closingprice',
     'previousclosing', 'nav', 'currentnav', 'latestnav', 'currentmarketprice', 'cmp'
+  ],
+  date: [
+    'purchasedate', 'buydate', 'tradedate', 'transactiondate', 'date',
+    'dateofpurchase', 'allotmentdate', 'orderdate', 'valuedate'
   ]
 };
+
+// Broker files write dates every which way: 15/03/2024, 15-Mar-2024, 2024-03-15.
+// Day-first is assumed for the slash form, which is the Indian convention —
+// getting this backwards would silently move a holding across the 12-month
+// short/long-term line.
+const MONTHS = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+
+export function parseDate(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  let m = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);                       // 2024-03-15
+  if (m) return isoOf(+m[1], +m[2] - 1, +m[3]);
+
+  m = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);           // 15/03/2024
+  if (m) {
+    const year = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+    return isoOf(year, +m[2] - 1, +m[1]);
+  }
+
+  m = raw.match(/^(\d{1,2})[\s\-]([A-Za-z]{3,})[\s\-](\d{2,4})$/);         // 15-Mar-2024
+  if (m) {
+    const month = MONTHS[m[2].slice(0, 3).toLowerCase()];
+    if (month === undefined) return null;
+    const year = +m[3] < 100 ? 2000 + +m[3] : +m[3];
+    return isoOf(year, month, +m[1]);
+  }
+
+  return null;
+}
+
+function isoOf(y, mo, d) {
+  const dt = new Date(Date.UTC(y, mo, d));
+  if (Number.isNaN(dt.getTime())) return null;
+  // A date in the future is a misread, not a purchase.
+  if (dt.getTime() > Date.now() + 86400000) return null;
+  return dt.toISOString().slice(0, 10);
+}
 
 const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -81,7 +124,8 @@ function mapColumns(header) {
     name: findColumn(cells, 'name'),
     quantity: findColumn(cells, 'quantity'),
     buy: findColumn(cells, 'buy'),
-    current: findColumn(cells, 'current')
+    current: findColumn(cells, 'current'),
+    date: findColumn(cells, 'date')
   };
 }
 
@@ -128,7 +172,8 @@ export function parseHoldingsTable(text) {
       name,
       quantity,
       buyPrice: columns.buy >= 0 ? toNumber(cells[columns.buy]) : null,
-      currentPrice: columns.current >= 0 ? toNumber(cells[columns.current]) : null
+      currentPrice: columns.current >= 0 ? toNumber(cells[columns.current]) : null,
+      purchaseDate: columns.date >= 0 ? parseDate(cells[columns.date]) : null
     });
   }
 
@@ -139,7 +184,7 @@ export function parseHoldingsTable(text) {
 // Mutual funds keep their values in units/buy_nav/current_nav rather than
 // quantity/buy_price/current_price.
 export function toHolding(row, type) {
-  const base = { type, quote_id: row.quoteId || null };
+  const base = { type, quote_id: row.quoteId || null, purchase_date: row.purchaseDate || null };
 
   if (type === 'mf') {
     return {

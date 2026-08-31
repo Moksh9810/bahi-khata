@@ -1,7 +1,10 @@
-// Format currency in Indian Rupees
+// Format currency in Indian Rupees.
+// The sign goes in front of the symbol: -₹9,096, not ₹-9,096.
 export const formatCurrency = (value) => {
   if (!value && value !== 0) return '₹0';
-  return '₹' + Math.round(value).toLocaleString('en-IN');
+  const rounded = Math.round(value);
+  const sign = rounded < 0 ? '-' : '';
+  return sign + '₹' + Math.abs(rounded).toLocaleString('en-IN');
 };
 
 // Format percentage
