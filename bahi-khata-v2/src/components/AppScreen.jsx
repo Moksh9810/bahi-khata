@@ -11,6 +11,7 @@ import { UpgradeModal } from './Paywall';
 import PortfolioBar from './PortfolioBar';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { useTheme } from '../hooks/useTheme';
+import PriceAlerts from './PriceAlerts';
 
 export default function AppScreen({
   user,
@@ -190,7 +191,6 @@ export default function AppScreen({
           />
         )}
 
-        {/* NEW PLACEHOLDERS FOR GOALS & ALERTS */}
         {activeTab === 'goals' && (
           <div className="card p-12 flex flex-col items-center justify-center text-center mt-8">
             <span className="material-symbols-outlined text-6xl text-primary mb-4">flag</span>
@@ -200,11 +200,7 @@ export default function AppScreen({
         )}
 
         {activeTab === 'alerts' && (
-          <div className="card p-12 flex flex-col items-center justify-center text-center mt-8">
-            <span className="material-symbols-outlined text-6xl text-primary mb-4">notifications_active</span>
-            <h2 className="text-3xl font-bold text-on-surface mb-2">Price Alerts</h2>
-            <p className="text-on-surface-variant max-w-md">Never miss a market move. Set custom price alerts for your assets. This feature is currently under construction and will be available soon.</p>
-          </div>
+          <PriceAlerts user={user} />
         )}
 
         {activeTab === 'pricing' && (
