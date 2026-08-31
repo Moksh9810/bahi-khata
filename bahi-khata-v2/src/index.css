@@ -2,98 +2,122 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Light mode color variables - Using RGB for Tailwind v4 compatibility */
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Components address colours through semantic names (surface, on-surface,
+   primary, success, error…) rather than raw hex, so the whole application can
+   be re-skinned from this one block. Values are space-separated RGB channels
+   because Tailwind composes them as rgb(var(--token) / <alpha>), which is what
+   makes utilities like bg-primary/10 work.
+
+   Palette: Slate canvas, Blue-600 actions, Emerald gains, Rose losses,
+   Amber pending. Text pairings are chosen to clear WCAG AA (4.5:1) on their
+   own background — slate-500 on white is 4.76:1, emerald-700 on emerald-50
+   is 6.4:1, rose-700 on rose-50 is 6.6:1.
+--------------------------------------------------------------------------- */
 :root {
-  --primary: 109 59 215;
-  --on-primary: 255 255 255;
-  --primary-container: 234 221 255;
-  --on-primary-container: 35 0 92;
-
-  --secondary: 10 108 124;
-  --on-secondary: 255 255 255;
-  --secondary-container: 172 237 255;
-  --on-secondary-container: 0 31 38;
-
-  --tertiary: 109 59 0;
-  --on-tertiary: 255 255 255;
-  --tertiary-container: 255 221 184;
-  --on-tertiary-container: 42 23 0;
-
-  --background: 255 251 254;
-  --on-background: 31 27 32;
-  --surface: 255 251 254;
-  --on-surface: 31 27 32;
-
+  /* Surfaces */
+  --background: 248 250 252;                 /* slate-50  — app canvas      */
+  --surface: 255 255 255;                    /* white     — cards, modals   */
   --surface-container-lowest: 255 255 255;
-  --surface-container-low: 247 242 247;
-  --surface-container: 243 238 243;
-  --surface-container-high: 237 232 237;
-  --surface-container-highest: 231 224 231;
+  --surface-container-low: 248 250 252;      /* slate-50                     */
+  --surface-container: 241 245 249;          /* slate-100 — table headers    */
+  --surface-container-high: 241 245 249;     /* slate-100                    */
+  --surface-container-highest: 226 232 240;  /* slate-200                    */
+  --surface-variant: 241 245 249;            /* slate-100                    */
 
-  --surface-variant: 231 224 236;
-  --on-surface-variant: 73 69 78;
+  /* Text */
+  --on-background: 15 23 42;                 /* slate-900 — headings, totals */
+  --on-surface: 15 23 42;                    /* slate-900                    */
+  --on-surface-variant: 100 116 139;         /* slate-500 — labels, dates    */
 
-  --error: 179 38 30;
+  /* Lines */
+  --outline-variant: 226 232 240;            /* slate-200 — dividers         */
+  --outline: 203 213 225;                    /* slate-300 — field borders    */
+
+  /* Brand / action */
+  --primary: 37 99 235;                      /* blue-600                     */
+  --on-primary: 255 255 255;
+  --primary-container: 219 234 254;          /* blue-100                     */
+  --on-primary-container: 30 58 138;         /* blue-900                     */
+
+  --secondary: 71 85 105;                    /* slate-600                    */
+  --on-secondary: 255 255 255;
+  --secondary-container: 241 245 249;
+  --on-secondary-container: 15 23 42;
+
+  /* Pending / neutral — amber */
+  --tertiary: 180 83 9;                      /* amber-700                    */
+  --on-tertiary: 255 255 255;
+  --tertiary-container: 255 251 235;         /* amber-50                     */
+  --on-tertiary-container: 180 83 9;
+
+  /* Debit / loss — rose */
+  --error: 190 18 60;                        /* rose-700                     */
   --on-error: 255 255 255;
-  --error-container: 249 222 220;
-  --on-error-container: 65 14 11;
+  --error-container: 255 241 242;            /* rose-50                      */
+  --on-error-container: 159 18 57;           /* rose-800                     */
 
-  --outline: 121 116 126;
-  --outline-variant: 202 199 208;
+  /* Credit / gain — emerald */
+  --success: 4 120 87;                       /* emerald-700                  */
+  --on-success: 255 255 255;
+  --success-container: 236 253 245;          /* emerald-50                   */
+  --success-glow: rgba(37, 99, 235, 0.2);
 
-  --inverse-surface: 49 48 51;
-  --inverse-on-surface: 244 239 244;
-  --inverse-primary: 208 188 255;
-
-  --success: 45 125 45;
-  --success-glow: rgba(45, 125, 45, 0.2);
+  --inverse-surface: 15 23 42;
+  --inverse-on-surface: 248 250 252;
+  --inverse-primary: 147 197 253;            /* blue-300                     */
 }
 
-/* Dark mode color variables - Using RGB for Tailwind v4 compatibility */
+/* Dark counterpart. The specification is a light theme, but the app ships a
+   theme toggle, so the same token names are given dark values that keep the
+   identical meaning: slate canvas, blue actions, emerald gains, rose losses. */
 .dark {
-  --primary: 208 188 255;
-  --on-primary: 60 0 145;
-  --primary-container: 160 120 255;
-  --on-primary-container: 35 0 92;
+  --background: 15 23 42;                    /* slate-900                    */
+  --surface: 30 41 59;                       /* slate-800                    */
+  --surface-container-lowest: 15 23 42;
+  --surface-container-low: 30 41 59;
+  --surface-container: 51 65 85;             /* slate-700                    */
+  --surface-container-high: 51 65 85;
+  --surface-container-highest: 71 85 105;    /* slate-600                    */
+  --surface-variant: 51 65 85;
 
-  --secondary: 76 215 246;
-  --on-secondary: 0 54 64;
-  --secondary-container: 3 181 211;
-  --on-secondary-container: 0 31 38;
+  --on-background: 241 245 249;              /* slate-100                    */
+  --on-surface: 241 245 249;
+  --on-surface-variant: 148 163 184;         /* slate-400                    */
 
-  --tertiary: 255 185 95;
-  --on-tertiary: 71 42 0;
-  --tertiary-container: 202 129 0;
-  --on-tertiary-container: 42 23 0;
+  --outline-variant: 51 65 85;               /* slate-700                    */
+  --outline: 71 85 105;                      /* slate-600                    */
 
-  --background: 18 18 29;
-  --on-background: 228 225 240;
-  --surface: 18 18 29;
-  --on-surface: 228 225 240;
+  --primary: 96 165 250;                     /* blue-400 — lifted for dark   */
+  --on-primary: 15 23 42;
+  --primary-container: 30 58 138;            /* blue-900                     */
+  --on-primary-container: 219 234 254;
 
-  --surface-container-lowest: 13 13 23;
-  --surface-container-low: 27 27 37;
-  --surface-container: 31 31 41;
-  --surface-container-high: 41 41 52;
-  --surface-container-highest: 52 52 63;
+  --secondary: 148 163 184;
+  --on-secondary: 15 23 42;
+  --secondary-container: 51 65 85;
+  --on-secondary-container: 241 245 249;
 
-  --surface-variant: 52 52 63;
-  --on-surface-variant: 203 195 215;
+  --tertiary: 251 191 36;                    /* amber-400                    */
+  --on-tertiary: 69 26 3;
+  --tertiary-container: 69 26 3;
+  --on-tertiary-container: 253 230 138;
 
-  --error: 255 180 171;
-  --on-error: 105 0 5;
-  --error-container: 147 0 10;
-  --on-error-container: 255 218 214;
+  --error: 251 113 133;                      /* rose-400                     */
+  --on-error: 76 5 25;
+  --error-container: 76 5 25;
+  --on-error-container: 254 205 211;
 
-  --outline: 149 142 160;
-  --outline-variant: 73 68 84;
+  --success: 52 211 153;                     /* emerald-400                  */
+  --on-success: 2 44 34;
+  --success-container: 6 78 59;              /* emerald-900                  */
+  --success-glow: rgba(96, 165, 250, 0.25);
 
-  --inverse-surface: 228 225 240;
-  --inverse-on-surface: 48 47 59;
-  --inverse-primary: 109 59 215;
-
-  --success: 74 222 128;
-  --success-glow: rgba(74, 222, 128, 0.3);
+  --inverse-surface: 241 245 249;
+  --inverse-on-surface: 15 23 42;
+  --inverse-primary: 37 99 235;
 }
 
 * {
@@ -109,7 +133,9 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: rgb(var(--background));
+  color: rgb(var(--on-surface));
 }
 
 #root {
@@ -117,28 +143,111 @@ body {
   min-height: 100vh;
 }
 
-/* Smooth transition for theme changes */
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    transition: background-color 0.3s, color 0.3s;
+@layer components {
+  /* Standard card. Replaces the old translucent "glass" panels, which were
+     hard-coded to a dark colour and so ignored the theme entirely. */
+  .card,
+  .glass-panel {
+    background-color: rgb(var(--surface));
+    border: 1px solid rgb(var(--outline-variant));
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.05);
   }
+
+  /* Money badges. Colour alone never carries the meaning — a sign or label
+     always accompanies it, for readers who cannot distinguish the two hues. */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .badge-credit {
+    background-color: rgb(var(--success-container));
+    color: rgb(var(--success));
+    border-color: rgb(167 243 208);          /* emerald-200                  */
+  }
+  .badge-debit {
+    background-color: rgb(var(--error-container));
+    color: rgb(var(--error));
+    border-color: rgb(254 205 211);          /* rose-200                     */
+  }
+  .badge-pending {
+    background-color: rgb(var(--tertiary-container));
+    color: rgb(var(--tertiary));
+    border-color: rgb(253 230 138);          /* amber-200                    */
+  }
+
+  .btn-primary {
+    background-color: rgb(var(--primary));
+    color: rgb(var(--on-primary));
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 150ms ease;
+  }
+  .btn-primary:hover { background-color: rgb(29 78 216); }   /* blue-700     */
+  .btn-primary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px rgb(59 130 246 / 0.2);
+  }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .btn-secondary {
+    background-color: rgb(var(--surface));
+    color: rgb(var(--on-surface));
+    border: 1px solid rgb(var(--outline));
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: background-color 150ms ease;
+  }
+  .btn-secondary:hover { background-color: rgb(var(--surface-container)); }
+
+  .input-field {
+    width: 100%;
+    background-color: rgb(var(--surface));
+    border: 1px solid rgb(var(--outline));
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    color: rgb(var(--on-surface));
+  }
+  .input-field::placeholder { color: rgb(148 163 184); }      /* slate-400   */
+  .input-field:focus {
+    outline: none;
+    border-color: rgb(var(--primary));
+    box-shadow: 0 0 0 2px rgb(59 130 246 / 0.2);
+  }
+  .input-field.has-error {
+    border-color: rgb(244 63 94);                             /* rose-500    */
+    color: rgb(225 29 72);                                    /* rose-600    */
+  }
+  .input-field.has-error:focus { box-shadow: 0 0 0 2px rgb(244 63 94 / 0.2); }
+
+  .table-header {
+    background-color: rgb(var(--surface-container));
+    color: rgb(var(--on-surface-variant));
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .table-row {
+    border-bottom: 1px solid rgb(var(--outline-variant));
+    transition: background-color 150ms ease;
+  }
+  .table-row:hover { background-color: rgb(var(--surface-container-low)); }
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--surface-container);
-}
-
+/* Scrollbars follow the palette instead of the browser default. */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgb(var(--surface-container)); }
 ::-webkit-scrollbar-thumb {
-  background: var(--outline-variant);
+  background: rgb(var(--outline));
   border-radius: 4px;
 }
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--outline);
-}
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--on-surface-variant)); }

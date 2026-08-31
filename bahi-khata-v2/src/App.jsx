@@ -59,7 +59,7 @@ export default function App() {
   // The database enforces this too — this screen just explains what happened.
   if (profileLoaded && isRestricted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-6 dark">
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <div className="max-w-md text-center">
           <h1 className="font-headline-lg text-headline-lg text-on-surface mb-3">Account paused</h1>
           <p className="text-on-surface-variant mb-6">
