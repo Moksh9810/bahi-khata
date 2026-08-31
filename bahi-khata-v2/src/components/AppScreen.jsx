@@ -50,9 +50,9 @@ export default function AppScreen({
     { id: 'performance', label: 'Performance', icon: 'trending_up' },
     { id: 'tax', label: 'Capital Gains', icon: 'receipt_long' },
     { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+    { id: 'goals', label: 'My Goals', icon: 'flag' },
+    { id: 'alerts', label: 'Price Alerts', icon: 'notifications_active' },
     { id: 'pricing', label: isPro ? 'Your plan' : 'Upgrade', icon: 'workspace_premium' },
-    // Only rendered for admin roles; a non-admin never sees this entry, and the
-    // server refuses admin requests regardless of what the browser shows.
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: 'admin_panel_settings' }] : [])
   ];
 
@@ -188,6 +188,23 @@ export default function AppScreen({
               description: 'Short and long term split out, the ₹1.25 lakh exemption applied, and the holdings that are weeks away from a lower rate.'
             })}
           />
+        )}
+
+        {/* NEW PLACEHOLDERS FOR GOALS & ALERTS */}
+        {activeTab === 'goals' && (
+          <div className="card p-12 flex flex-col items-center justify-center text-center mt-8">
+            <span className="material-symbols-outlined text-6xl text-primary mb-4">flag</span>
+            <h2 className="text-3xl font-bold text-on-surface mb-2">Goal-Based Tracking</h2>
+            <p className="text-on-surface-variant max-w-md">Plan for retirement, your dream house, or kids' education. The Goals feature is currently under construction and will be available soon.</p>
+          </div>
+        )}
+
+        {activeTab === 'alerts' && (
+          <div className="card p-12 flex flex-col items-center justify-center text-center mt-8">
+            <span className="material-symbols-outlined text-6xl text-primary mb-4">notifications_active</span>
+            <h2 className="text-3xl font-bold text-on-surface mb-2">Price Alerts</h2>
+            <p className="text-on-surface-variant max-w-md">Never miss a market move. Set custom price alerts for your assets. This feature is currently under construction and will be available soon.</p>
+          </div>
         )}
 
         {activeTab === 'pricing' && (
