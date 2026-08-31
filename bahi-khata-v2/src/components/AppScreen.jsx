@@ -12,6 +12,7 @@ import PortfolioBar from './PortfolioBar';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { useTheme } from '../hooks/useTheme';
 import PriceAlerts from './PriceAlerts';
+import MyGoals from './MyGoals';
 
 export default function AppScreen({
   user,
@@ -192,11 +193,7 @@ export default function AppScreen({
         )}
 
         {activeTab === 'goals' && (
-          <div className="card p-12 flex flex-col items-center justify-center text-center mt-8">
-            <span className="material-symbols-outlined text-6xl text-primary mb-4">flag</span>
-            <h2 className="text-3xl font-bold text-on-surface mb-2">Goal-Based Tracking</h2>
-            <p className="text-on-surface-variant max-w-md">Plan for retirement, your dream house, or kids' education. The Goals feature is currently under construction and will be available soon.</p>
-          </div>
+          <MyGoals stats={stats} />
         )}
 
         {activeTab === 'alerts' && (
