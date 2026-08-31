@@ -18,12 +18,12 @@ export const formSchemas = {
 
   bonds: [
     { name: 'name', label: 'Bond Name', type: 'text', placeholder: 'e.g., SGB 2028', required: true },
-    { name: 'quantity', label: 'Quantity', type: 'number', placeholder: 'Total units/bonds', required: true },
-    { name: 'buy_price', label: 'Buy Price / Face Value (₹)', type: 'number', placeholder: 'Price per unit', step: 0.01, required: true },
+    { name: 'quantity', label: 'Total Face Value (₹)', type: 'number', placeholder: 'e.g., 40000', required: true },
+    { name: 'buy_price', label: 'Total Purchase Price (₹)', type: 'number', placeholder: 'e.g., 39500', step: 0.01, required: true },
     { name: 'purchase_date', label: 'Purchase Date', type: 'date', required: true },
     { name: 'interest_rate', label: 'Interest Rate (%)', type: 'number', placeholder: 'Annual rate (e.g., 5.5)', step: 0.01, required: false },
     { name: 'payout_frequency', label: 'Payout Frequency', type: 'select', options: ['Cumulative (At Maturity)', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'], required: true },
-    { name: 'current_price', label: 'Current Market Price (₹)', type: 'number', placeholder: 'Manual current price', step: 0.01, required: false }
+    { name: 'current_price', label: 'Total Current Market Price (₹)', type: 'number', placeholder: 'Manual total current price', step: 0.01, required: false }
   ],
 
   loans: [

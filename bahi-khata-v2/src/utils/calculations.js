@@ -3,8 +3,8 @@ export const calculateAssetCurrentValue = (h, type) => {
   const today = new Date();
 
   if (type === 'bonds') {
-    const principal = (h.quantity || 0) * (h.buy_price || 1);
-    if (h.current_price) return (h.quantity || 0) * h.current_price;
+    const principal = h.quantity || 0; // Fixed: Use total face value directly. No multiplication.
+    if (h.current_price) return h.current_price;
     if (!h.purchase_date) return principal;
 
     const days = Math.max(0, (today - new Date(h.purchase_date)) / (1000 * 60 * 60 * 24));
@@ -20,7 +20,6 @@ export const calculateAssetCurrentValue = (h, type) => {
     const isFixed = h.payout_frequency?.includes('Fixed') || h.payout_frequency?.includes('EMI');
 
     if (isFixed && h.payout_amount) {
-      // Pro-rata based on elapsed months (avg 30.41 days per month)
       const monthsElapsed = days / (365 / 12);
       return principal + (monthsElapsed * h.payout_amount);
     } else {
@@ -35,7 +34,6 @@ export const calculateAssetCurrentValue = (h, type) => {
 export const calculatePortfolioStats = (portfolio) => {
   let invested = 0, currentValue = 0;
 
-  // Stocks
   if (portfolio.stocks) {
     portfolio.stocks.forEach(s => {
       invested += s.quantity * s.buy_price;
@@ -43,7 +41,6 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // Mutual Funds
   if (portfolio.mf) {
     portfolio.mf.forEach(m => {
       invested += m.units * m.buy_nav;
@@ -51,15 +48,13 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // Bonds
   if (portfolio.bonds) {
     portfolio.bonds.forEach(b => {
-      invested += (b.quantity || 0) * (b.buy_price || 1);
+      invested += b.quantity || 0; // Fixed: Matches original database state
       currentValue += calculateAssetCurrentValue(b, 'bonds');
     });
   }
 
-  // Loans (negative - money lent out)
   if (portfolio.loans) {
     portfolio.loans.forEach(l => {
       invested += l.quantity || 0;
@@ -67,7 +62,6 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // Crypto
   if (portfolio.crypto) {
     portfolio.crypto.forEach(c => {
       invested += (c.quantity || 0) * (c.buy_price || 0);
@@ -75,7 +69,6 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // Gold
   if (portfolio.gold) {
     portfolio.gold.forEach(g => {
       invested += (g.quantity || 0) * (g.buy_price || 0);
@@ -83,7 +76,6 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // Properties
   if (portfolio.properties) {
     portfolio.properties.forEach(p => {
       invested += p.quantity;
@@ -91,7 +83,6 @@ export const calculatePortfolioStats = (portfolio) => {
     });
   }
 
-  // FDs
   if (portfolio.fds) {
     portfolio.fds.forEach(f => {
       invested += f.quantity;
@@ -120,7 +111,6 @@ export const calculatePortfolioStats = (portfolio) => {
   };
 };
 
-// Calculate asset allocation percentages
 export const calculateAllocation = (portfolio) => {
   const stats = calculatePortfolioStats(portfolio);
   const { breakdown, currentValue } = stats;
@@ -131,7 +121,6 @@ export const calculateAllocation = (portfolio) => {
   }, {});
 };
 
-// Calculate Sharpe Ratio (risk-adjusted return)
 export const calculateSharpeRatio = (returns, riskFreeRate = 0.06) => {
   if (returns.length === 0) return 0;
 
@@ -139,13 +128,12 @@ export const calculateSharpeRatio = (returns, riskFreeRate = 0.06) => {
   const variance = returns.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / returns.length;
   const stdDev = Math.sqrt(variance);
 
-  const annualReturn = mean * 252; // 252 trading days
+  const annualReturn = mean * 252;
   const annualStdDev = stdDev * Math.sqrt(252);
 
   return (annualReturn - riskFreeRate) / annualStdDev;
 };
 
-// Calculate Volatility
 export const calculateVolatility = (returns) => {
   if (returns.length === 0) return 0;
 
@@ -153,10 +141,9 @@ export const calculateVolatility = (returns) => {
   const variance = returns.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / returns.length;
   const stdDev = Math.sqrt(variance);
 
-  return (stdDev * Math.sqrt(252)).toFixed(4); // Annualized
+  return (stdDev * Math.sqrt(252)).toFixed(4);
 };
 
-// Tax loss harvesting suggestions
 export const getTaxLossHarvestingOpportunities = (portfolio) => {
   const opportunities = [];
 
@@ -177,7 +164,6 @@ export const getTaxLossHarvestingOpportunities = (portfolio) => {
   return opportunities;
 };
 
-// Rebalancing suggestions
 export const getRebalancingAdvice = (portfolio, targetAllocation) => {
   const current = calculateAllocation(portfolio);
   const stats = calculatePortfolioStats(portfolio);
@@ -189,7 +175,7 @@ export const getRebalancingAdvice = (portfolio, targetAllocation) => {
     const curr = parseFloat(current[asset]) || 0;
     const diff = curr - target;
 
-    if (Math.abs(diff) > 5) { // More than 5% deviation
+    if (Math.abs(diff) > 5) {
       const amount = (Math.abs(diff) / 100) * stats.currentValue;
       advice.push({
         asset,
@@ -207,9 +193,15 @@ export const getRebalancingAdvice = (portfolio, targetAllocation) => {
   return advice;
 };
 
-// Groups identical holdings (e.g. same stock bought on different dates) for display
 export const groupHoldingsForDisplay = (holdingsArray, assetType) => {
   if (!holdingsArray || !Array.isArray(holdingsArray)) return [];
+
+  // Fixed: Do not group single-contract assets to prevent UI and math bugs
+  const nonGroupableTypes = ['bonds', 'loans', 'fds', 'properties'];
+  if (nonGroupableTypes.includes(assetType)) {
+    return holdingsArray;
+  }
+
   const grouped = {};
 
   holdingsArray.forEach(h => {
