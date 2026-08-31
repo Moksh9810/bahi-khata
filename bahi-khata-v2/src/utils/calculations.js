@@ -177,3 +177,8 @@ export const groupHoldingsForDisplay = (holdingsArray, assetType) => {
   });
   return Object.values(grouped);
 };
+export const calculateAssetPL = (invested, currentValue) => {  
+  const pl = currentValue - invested;
+  const pct = invested > 0 ? (pl / invested) * 100 : 0;
+  return { pl, pct };
+};
