@@ -2,15 +2,18 @@ export default function Navigation({ tabs, activeTab, onTabChange, isOpen, onClo
   return (
     <>
       {/* SIDEBAR */}
+      {/* The sidebar starts below the fixed header (h-16) so the two no longer
+          overlap. The brand lives in the header alone — it used to be printed
+          here as well, which read as the name twice over. */}
       <nav
-        className={`fixed left-0 top-0 h-full w-72 z-[60] flex flex-col py-6 transition-all duration-200 md:translate-x-0 ${
+        className={`fixed left-0 top-16 h-[calc(100%-4rem)] w-72 z-[60] flex flex-col py-4 bg-surface border-r border-outline-variant transition-all duration-200 md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}>
-        <div className="px-6 mb-8 flex justify-between items-center">
-          <h2 className="font-headline-lg text-headline-lg text-primary">Bahi-Khata</h2>
+        <div className="px-4 pb-2 flex justify-end md:hidden">
           <button
             onClick={onClose}
-            className="text-on-surface-variant p-2 hover:bg-surface-container rounded-full md:hidden"
+            className="text-on-surface-variant p-2 hover:bg-surface-container rounded-full"
+            aria-label="Close menu"
           >
             <span className="material-symbols-outlined">close</span>
           </button>

@@ -33,7 +33,7 @@ export default function AuthScreen({ onSignup, onSignin }) {
       <div className="w-full max-w-md">
         <div className="card p-8">
           <h1 className="text-headline-lg font-headline-lg text-primary mb-2">
-            ₹ Bahi-Khata
+            ₹ MYWEALTH
           </h1>
           <p className="text-on-surface-variant mb-8 text-body-md">
             Track investments, maximize returns

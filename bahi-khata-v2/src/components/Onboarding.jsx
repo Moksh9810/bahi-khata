@@ -6,7 +6,7 @@ export default function Onboarding({ onComplete }) {
 
   const steps = [
     {
-      title: 'Welcome to Bahi-Khata',
+      title: 'Welcome to MYWEALTH',
       description: 'Your personal investment portfolio tracker',
       icon: 'trending_up',
       content: (

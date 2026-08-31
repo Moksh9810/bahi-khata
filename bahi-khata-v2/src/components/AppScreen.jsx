@@ -58,7 +58,7 @@ export default function AppScreen({
             <span className="material-symbols-outlined">menu</span>
           </button>
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">
-            Bahi-Khata
+            MYWEALTH
           </h1>
         </div>
         <div className="flex items-center gap-2">
