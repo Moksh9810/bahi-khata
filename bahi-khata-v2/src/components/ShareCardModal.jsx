@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import html2canvas from 'html2canvas';
+import { toPng } from 'html-to-image';
 
 export default function ShareCardModal({ stats, onClose }) {
   const isPositive = stats.pl >= 0;
@@ -29,53 +29,43 @@ export default function ShareCardModal({ stats, onClose }) {
     setSuccessMsg('');
 
     try {
-      // Force high-scale canvas capture of the exact DOM ticket card
-      const canvas = await html2canvas(cardRef.current, {
-        backgroundColor: null,
-        scale: 3,
-        useCORS: true,
-        logging: false
+      // html-to-image takes an exact 1:1 snapshot of the DOM element
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 1,
+        pixelRatio: 3,
+        cacheBust: true,
+        style: { margin: '0' }
       });
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) {
-          setIsSharing(false);
-          return;
-        }
-        
-        const file = new File([blob], 'mywealth-portfolio.png', { type: 'image/png' });
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], 'mywealth-portfolio.png', { type: 'image/png' });
 
-        // Try native file sharing first if supported
-        let sharedSuccessfully = false;
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
-            await navigator.share({
-              title: 'MYWEALTH Portfolio',
-              text: `My portfolio is ${isPositive ? 'up' : 'down'} by ${Math.abs(stats.pctReturn).toFixed(2)}% (${timeframe})!`,
-              files: [file]
-            });
-            sharedSuccessfully = true;
-          } catch (err) {
-            console.log('Native share cancelled or failed', err);
-          }
+      let sharedSuccessfully = false;
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: 'MYWEALTH Portfolio',
+            text: `My portfolio is ${isPositive ? 'up' : 'down'} by ${Math.abs(stats.pctReturn).toFixed(2)}% (${timeframe})!`,
+            files: [file]
+          });
+          sharedSuccessfully = true;
+        } catch (err) {
+          console.log('Native share cancelled', err);
         }
+      }
 
-        // Fallback or Direct Action: Download the image automatically so user can share anywhere instantly
-        if (!sharedSuccessfully) {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `mywealth-portfolio-${timeframe.toLowerCase().replace(' ', '-')}.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(url);
-          
-          setSuccessMsg('Card image downloaded successfully! You can now share it on WhatsApp/Instagram.');
-        }
+      if (!sharedSuccessfully) {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `mywealth-portfolio-${timeframe.toLowerCase().replace(' ', '-')}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setSuccessMsg('Card downloaded exactly as shown! You can now share it.');
+      }
 
-        setIsSharing(false);
-      }, 'image/png');
+      setIsSharing(false);
     } catch (err) {
       console.error('Error generating image:', err);
       alert('Failed to generate image. Please try taking a screenshot.');
@@ -92,7 +82,7 @@ export default function ShareCardModal({ stats, onClose }) {
         </button>
 
         <div className="p-6 pb-2 flex justify-center">
-          {/* Exact Ticket Card matching reference */}
+          {/* EXACT TICKET PREVIEW (This entire div gets converted to image) */}
           <div 
             ref={cardRef} 
             className="w-full bg-gradient-to-br from-[#0f1115] via-[#15181d] to-[#1e1c15] rounded-3xl relative overflow-hidden shadow-2xl p-6 text-white" 
@@ -140,7 +130,7 @@ export default function ShareCardModal({ stats, onClose }) {
               </div>
             </div>
 
-            {/* Ticket Cutout Divider with Side Holes */}
+            {/* Ticket Cutout Divider */}
             <div className="relative h-6 flex items-center w-full -mx-6 px-6 my-2">
               <div className="absolute -left-3.5 w-7 h-7 bg-white rounded-full"></div>
               <div className="w-full border-t border-dashed border-gray-700"></div>
@@ -190,7 +180,7 @@ export default function ShareCardModal({ stats, onClose }) {
           </div>
         )}
         
-        {/* Share Button Footer */}
+        {/* Share Button */}
         <div className="px-6 pb-6 pt-2">
           <button 
             onClick={handleShare} 
