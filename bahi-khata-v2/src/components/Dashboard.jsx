@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { formatCurrency, formatPercent, getColorByValue } from '../utils/formatters';
 import { PortfolioGrowthChart, AssetAllocationChart, CategoryPerformanceChart } from './Charts';
 import { AdvancedAnalytics } from './Analytics';
@@ -6,10 +6,12 @@ import { SkeletonDashboard, SkeletonChart } from './Skeleton';
 import { EmptyDashboard } from './EmptyState';
 import { usePortfolioStats, useCategoryPerformance } from '../utils/performance';
 import { calculateAssetCurrentValue } from '../utils/calculations';
+import ShareCardModal from './ShareCardModal';
 
 function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
   const portfolioStats = usePortfolioStats(portfolio);
   const categoryPerformance = useCategoryPerformance(portfolio);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   if (isLoading) {
     return <SkeletonDashboard />;
@@ -26,29 +28,46 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
     <div className="space-y-8">
       {/* Summary Strip */}
       <div className="card p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 sticky top-20 z-40">
-        <div>
-          <p className="text-on-surface-variant mb-1 uppercase tracking-wider text-xs">
-            Total Net P/L
-          </p>
-          <div className="flex items-baseline gap-4">
-            <h2 className={`font-display-lg text-display-lg ${stats.pl >= 0 ? 'text-success' : 'text-error'}`}>
-              {formatCurrency(stats.pl)}
-            </h2>
-            <span className={`font-data-lg text-data-lg ${stats.pl >= 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'} px-2 py-1 rounded`}>
-              {formatPercent(stats.pctReturn)}
-            </span>
+        <div className="flex justify-between w-full md:w-auto">
+          <div>
+            <p className="text-on-surface-variant mb-1 uppercase tracking-wider text-xs">
+              Total Net P/L
+            </p>
+            <div className="flex items-baseline gap-4">
+              <h2 className={`font-display-lg text-display-lg ${stats.pl >= 0 ? 'text-success' : 'text-error'}`}>
+                {formatCurrency(stats.pl)}
+              </h2>
+              <span className={`font-data-lg text-data-lg ${stats.pl >= 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'} px-2 py-1 rounded`}>
+                {formatPercent(stats.pctReturn)}
+              </span>
+            </div>
           </div>
+          {/* Mobile Share Button */}
+          <button onClick={() => setShowShareModal(true)} className="md:hidden text-primary p-2 hover:bg-primary/10 rounded-full transition-colors flex flex-col items-center justify-center">
+            <span className="material-symbols-outlined text-2xl">ios_share</span>
+          </button>
         </div>
-        <div className="flex gap-8 w-full md:w-auto border-t border-outline-variant md:border-t-0 pt-4 md:pt-0">
-          <div>
-            <p className="text-on-surface-variant mb-1 text-sm">Invested</p>
-            <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.invested)}</p>
+
+        <div className="flex items-center gap-6 w-full md:w-auto border-t border-outline-variant md:border-t-0 pt-4 md:pt-0">
+          <div className="flex gap-8">
+            <div>
+              <p className="text-on-surface-variant mb-1 text-sm">Invested</p>
+              <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.invested)}</p>
+            </div>
+            <div className="w-px bg-outline-variant h-10 self-center"></div>
+            <div>
+              <p className="text-on-surface-variant mb-1 text-sm">Current Value</p>
+              <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.currentValue)}</p>
+            </div>
           </div>
-          <div className="w-px bg-outline-variant h-10 self-center"></div>
-          <div>
-            <p className="text-on-surface-variant mb-1 text-sm">Current Value</p>
-            <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.currentValue)}</p>
-          </div>
+          {/* Desktop Share Button */}
+          <button 
+            onClick={() => setShowShareModal(true)} 
+            className="hidden md:flex items-center gap-2 px-5 py-2.5 ml-4 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-on-primary transition-all font-bold text-sm shadow-sm"
+          >
+            <span className="material-symbols-outlined text-lg">ios_share</span>
+            Share Return
+          </button>
         </div>
       </div>
 
@@ -138,6 +157,10 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
         </h2>
         <AdvancedAnalytics portfolio={portfolio} stats={stats} />
       </div>
+
+      {showShareModal && (
+        <ShareCardModal stats={stats} onClose={() => setShowShareModal(false)} />
+      )}
     </div>
   );
 }
