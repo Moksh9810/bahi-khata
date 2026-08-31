@@ -15,7 +15,7 @@ export default function App() {
     portfolio, stats, addHolding, importHoldings, removeHolding, updateHolding,
     refreshPrices, pricesUpdatedAt, loaded: portfolioLoaded
   } = usePortfolio(user?.id);
-  const { role, isAdmin, isRestricted, loaded: profileLoaded } = useProfile(user?.id);
+  const { role, isAdmin, isPro, isRestricted, loaded: profileLoaded } = useProfile(user?.id);
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -100,6 +100,12 @@ export default function App() {
       pricesUpdatedAt={pricesUpdatedAt}
       isAdmin={isAdmin}
       myRole={role}
+      isPro={isPro}
+      onCheckout={async () => {
+        // Payment provider not wired up yet. Saying so plainly beats a button
+        // that appears to work and quietly does nothing.
+        throw new Error('Payments are not live yet. Ask an admin to switch your plan for now.');
+      }}
       onLogout={logout}
     />
   );
