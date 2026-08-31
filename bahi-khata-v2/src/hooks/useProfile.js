@@ -8,6 +8,8 @@ import { can, normalisePlan } from '../utils/plans';
 export function useProfile(userId) {
   const [profile, setProfile] = useState(null);
   const [loaded, setLoaded] = useState(false);
+  // Bumped after a successful payment so the new plan is picked up at once.
+  const [nonce, setNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,7 +36,7 @@ export function useProfile(userId) {
     })();
 
     return () => { cancelled = true; };
-  }, [userId]);
+  }, [userId, nonce]);
 
   const role = profile?.role || 'user';
   // Rows written before the rename still say 'premium'; normalisePlan folds
@@ -49,6 +51,7 @@ export function useProfile(userId) {
     isPro: plan === 'pro',
     can: feature => can(plan, feature),
     isAdmin: ['support', 'manager', 'super_admin'].includes(role),
-    isRestricted: profile ? profile.status !== 'active' : false
+    isRestricted: profile ? profile.status !== 'active' : false,
+    reload: () => setNonce(n => n + 1)
   };
 }
