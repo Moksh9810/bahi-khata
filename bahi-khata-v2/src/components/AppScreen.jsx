@@ -5,6 +5,7 @@ import Navigation from './Navigation';
 import AnalyticsPage from './AnalyticsPage';
 import AdminPanel from './AdminPanel';
 import Performance from './Performance';
+import TaxEstimator from './TaxEstimator';
 import PricingPage from './PricingPage';
 import { UpgradeModal } from './Paywall';
 import { formatCurrency, formatPercent } from '../utils/formatters';
@@ -44,6 +45,7 @@ export default function AppScreen({
     { id: 'properties', label: 'Properties', icon: 'apartment' },
     { id: 'fds', label: 'Fixed Deposits', icon: 'savings' },
     { id: 'performance', label: 'Performance', icon: 'trending_up' },
+    { id: 'tax', label: 'Capital Gains', icon: 'receipt_long' },
     { id: 'analytics', label: 'Analytics', icon: 'analytics' },
     { id: 'pricing', label: isPro ? 'Your plan' : 'Upgrade', icon: 'workspace_premium' },
     // Only rendered for admin roles; a non-admin never sees this entry, and the
@@ -154,6 +156,17 @@ export default function AppScreen({
             onUpgrade={() => setPaywall({
               feature: 'Returns and benchmarks',
               description: 'XIRR, CAGR and a like-for-like comparison against the NIFTY 50, Sensex or S&P 500.'
+            })}
+          />
+        )}
+
+        {activeTab === 'tax' && (
+          <TaxEstimator
+            portfolio={portfolio}
+            isPro={isPro}
+            onUpgrade={() => setPaywall({
+              feature: 'Capital gains estimator',
+              description: 'Short and long term split out, the ₹1.25 lakh exemption applied, and the holdings that are weeks away from a lower rate.'
             })}
           />
         )}
