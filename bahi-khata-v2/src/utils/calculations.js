@@ -1,3 +1,36 @@
+// Helper to calculate daily accrued interest/profit based on dates
+export const calculateAssetCurrentValue = (h, type) => {
+  const today = new Date();
+
+  if (type === 'bonds') {
+    const principal = (h.quantity || 0) * (h.buy_price || 1);
+    if (h.current_price) return (h.quantity || 0) * h.current_price;
+    if (!h.purchase_date) return principal;
+
+    const days = Math.max(0, (today - new Date(h.purchase_date)) / (1000 * 60 * 60 * 24));
+    const rate = h.interest_rate || h.coupon_rate || 0;
+    return principal + (principal * (rate / 100) * (days / 365));
+  }
+
+  if (type === 'loans') {
+    const principal = h.quantity || 0;
+    if (!h.purchase_date) return principal;
+
+    const days = Math.max(0, (today - new Date(h.purchase_date)) / (1000 * 60 * 60 * 24));
+    const isFixed = h.payout_frequency?.includes('Fixed') || h.payout_frequency?.includes('EMI');
+
+    if (isFixed && h.payout_amount) {
+      // Pro-rata based on elapsed months (avg 30.41 days per month)
+      const monthsElapsed = days / (365 / 12);
+      return principal + (monthsElapsed * h.payout_amount);
+    } else {
+      const rate = h.interest_rate || h.buy_price || 0;
+      return principal + (principal * (rate / 100) * (days / 365));
+    }
+  }
+  return 0;
+};
+
 // Portfolio calculations
 export const calculatePortfolioStats = (portfolio) => {
   let invested = 0, currentValue = 0;
@@ -21,16 +54,16 @@ export const calculatePortfolioStats = (portfolio) => {
   // Bonds
   if (portfolio.bonds) {
     portfolio.bonds.forEach(b => {
-      invested += b.quantity;
-      currentValue += b.quantity; // Bonds typically stay at face value unless sold
+      invested += (b.quantity || 0) * (b.buy_price || 1);
+      currentValue += calculateAssetCurrentValue(b, 'bonds');
     });
   }
 
   // Loans (negative - money lent out)
   if (portfolio.loans) {
     portfolio.loans.forEach(l => {
-      invested += l.quantity; // Amount lent
-      currentValue += l.quantity; // Assuming full recovery
+      invested += l.quantity || 0;
+      currentValue += calculateAssetCurrentValue(l, 'loans');
     });
   }
 
@@ -53,16 +86,16 @@ export const calculatePortfolioStats = (portfolio) => {
   // Properties
   if (portfolio.properties) {
     portfolio.properties.forEach(p => {
-      invested += p.quantity; // Purchase price
-      currentValue += p.buy_price; // Current value
+      invested += p.quantity;
+      currentValue += p.buy_price;
     });
   }
 
   // FDs
   if (portfolio.fds) {
     portfolio.fds.forEach(f => {
-      invested += f.quantity; // Deposit amount
-      currentValue += f.quantity; // Assuming gets back principal
+      invested += f.quantity;
+      currentValue += f.quantity;
     });
   }
 
@@ -77,12 +110,12 @@ export const calculatePortfolioStats = (portfolio) => {
     breakdown: {
       stocks: portfolio.stocks ? portfolio.stocks.reduce((sum, s) => sum + ((s.quantity || 0) * (s.current_price || s.buy_price || 0)), 0) : 0,
       mf: portfolio.mf ? portfolio.mf.reduce((sum, m) => sum + ((m.units || 0) * (m.current_nav || m.buy_nav || 0)), 0) : 0,
-      bonds: portfolio.bonds ? portfolio.bonds.reduce((sum, b) => sum + (b.quantity || 0), 0) : 0,
+      bonds: portfolio.bonds ? portfolio.bonds.reduce((sum, b) => sum + calculateAssetCurrentValue(b, 'bonds'), 0) : 0,
       crypto: portfolio.crypto ? portfolio.crypto.reduce((sum, c) => sum + ((c.quantity || 0) * (c.current_price || c.buy_price || 0)), 0) : 0,
       gold: portfolio.gold ? portfolio.gold.reduce((sum, g) => sum + ((g.quantity || 0) * (g.current_price || g.buy_price || 0)), 0) : 0,
       properties: portfolio.properties ? portfolio.properties.reduce((sum, p) => sum + (p.buy_price || 0), 0) : 0,
       fds: portfolio.fds ? portfolio.fds.reduce((sum, f) => sum + (f.quantity || 0), 0) : 0,
-      loans: portfolio.loans ? portfolio.loans.reduce((sum, l) => sum + (l.quantity || 0), 0) : 0
+      loans: portfolio.loans ? portfolio.loans.reduce((sum, l) => sum + calculateAssetCurrentValue(l, 'loans'), 0) : 0
     }
   };
 };
@@ -180,14 +213,12 @@ export const groupHoldingsForDisplay = (holdingsArray, assetType) => {
   const grouped = {};
 
   holdingsArray.forEach(h => {
-    // Unique identifier fallback mapping
     const uniqueKey = h.symbol || h.scheme || h.name;
     const key = `${assetType}_${uniqueKey}`;
 
     if (!grouped[key]) {
       grouped[key] = { ...h };
     } else {
-      // Dynamic fields to handle both Stocks (quantity/buy_price) and MF (units/buy_nav)
       const qtyField = h.units !== undefined ? 'units' : 'quantity';
       const buyPriceField = h.buy_nav !== undefined ? 'buy_nav' : 'buy_price';
       const currentPriceField = h.current_nav !== undefined ? 'current_nav' : 'current_price';
@@ -197,14 +228,12 @@ export const groupHoldingsForDisplay = (holdingsArray, assetType) => {
       const currentBuyPrice = grouped[key][buyPriceField] || 0;
       const newBuyPrice = h[buyPriceField] || 0;
 
-      // Calculate weighted average buy price
       const totalCost = (currentQty * currentBuyPrice) + (newQty * newBuyPrice);
       const totalUnits = currentQty + newQty;
 
       grouped[key][qtyField] = totalUnits;
       grouped[key][buyPriceField] = totalUnits > 0 ? (totalCost / totalUnits) : 0;
 
-      // Update with the most recent current_price/nav if available
       if (h[currentPriceField]) {
         grouped[key][currentPriceField] = h[currentPriceField];
       }
