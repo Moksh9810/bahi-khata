@@ -6,6 +6,9 @@ export const usePortfolio = (userId) => {
   const portfolio = usePortfolioStore(state => state.portfolio);
   const setPortfolio = usePortfolioStore(state => state.setPortfolio);
   const setLoading = usePortfolioStore(state => state.setLoading);
+  // The store's `loading` starts false, so it cannot tell "not started yet"
+  // apart from "finished". This flag flips only once the first load is done.
+  const [loaded, setLoaded] = useState(false);
   const setError = usePortfolioStore(state => state.setError);
   const error = usePortfolioStore(state => state.error);
   const addHolding = usePortfolioStore(state => state.addHolding);
@@ -66,6 +69,7 @@ export const usePortfolio = (userId) => {
       setError(error.message);
     } finally {
       setLoading(false);
+      setLoaded(true);
     }
   };
 
@@ -81,6 +85,20 @@ export const usePortfolio = (userId) => {
     } catch (error) {
       setError(error.message);
       throw error;
+    }
+  };
+
+  const importHoldings = async (holdings) => {
+    try {
+      const saved = await holdingsService.addHoldings(userId, holdings);
+      // Reload rather than patching the store by hand: the rows come back with
+      // their database ids and any server-side defaults applied.
+      await loadPortfolio();
+      return saved;
+    } catch (err) {
+      setError(err.message);
+      if (err.savedCount) await loadPortfolio(); // show whatever did get through
+      throw err;
     }
   };
 
@@ -172,11 +190,13 @@ export const usePortfolio = (userId) => {
     portfolio,
     stats,
     addHolding: addNewHolding,
+    importHoldings,
     removeHolding: deleteHolding,
     updateHolding: updateHoldingData,
     loadPortfolio,
     refreshPrices,
     pricesUpdatedAt,
+    loaded,
     error
   };
 };
