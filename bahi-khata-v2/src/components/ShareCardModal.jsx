@@ -11,6 +11,7 @@ export default function ShareCardModal({ stats, onClose }) {
   const [timestamp, setTimestamp] = useState('');
   const cardRef = useRef(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
     const now = new Date();
@@ -25,13 +26,15 @@ export default function ShareCardModal({ stats, onClose }) {
   const handleShare = async () => {
     if (!cardRef.current) return;
     setIsSharing(true);
+    setSuccessMsg('');
 
     try {
-      // Capture the exact card DOM element as an image canvas
+      // Force high-scale canvas capture of the exact DOM ticket card
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
-        scale: 3, // High quality for sharing
-        useCORS: true
+        scale: 3,
+        useCORS: true,
+        logging: false
       });
 
       canvas.toBlob(async (blob) => {
@@ -41,24 +44,36 @@ export default function ShareCardModal({ stats, onClose }) {
         }
         
         const file = new File([blob], 'mywealth-portfolio.png', { type: 'image/png' });
-        
-        const shareData = {
-          title: 'MYWEALTH Portfolio',
-          text: `My investment portfolio is ${isPositive ? 'up' : 'down'} by ${Math.abs(stats.pctReturn).toFixed(2)}% (${timeframe})! 🚀 Track your net worth with MYWEALTH.`,
-          files: [file]
-        };
 
+        // Try native file sharing first if supported
+        let sharedSuccessfully = false;
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share(shareData);
-        } else {
+          try {
+            await navigator.share({
+              title: 'MYWEALTH Portfolio',
+              text: `My portfolio is ${isPositive ? 'up' : 'down'} by ${Math.abs(stats.pctReturn).toFixed(2)}% (${timeframe})!`,
+              files: [file]
+            });
+            sharedSuccessfully = true;
+          } catch (err) {
+            console.log('Native share cancelled or failed', err);
+          }
+        }
+
+        // Fallback or Direct Action: Download the image automatically so user can share anywhere instantly
+        if (!sharedSuccessfully) {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'mywealth-portfolio.png';
+          a.download = `mywealth-portfolio-${timeframe.toLowerCase().replace(' ', '-')}.png`;
+          document.body.appendChild(a);
           a.click();
+          document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          alert('Card image downloaded successfully!');
+          
+          setSuccessMsg('Card image downloaded successfully! You can now share it on WhatsApp/Instagram.');
         }
+
         setIsSharing(false);
       }, 'image/png');
     } catch (err) {
@@ -86,7 +101,6 @@ export default function ShareCardModal({ stats, onClose }) {
             
             <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-600/10 rounded-full blur-3xl pointer-events-none"></div>
             
-            {/* Top Branding & Period */}
             <div>
               <div className="flex items-center gap-1.5 font-black italic tracking-wider text-lg text-white">
                 <span className="material-symbols-outlined text-primary text-2xl">insights</span>
@@ -169,6 +183,12 @@ export default function ShareCardModal({ stats, onClose }) {
             ))}
           </div>
         </div>
+
+        {successMsg && (
+          <div className="px-6 pb-2">
+            <p className="text-xs text-success bg-success/10 p-2.5 rounded-lg text-center font-medium">{successMsg}</p>
+          </div>
+        )}
         
         {/* Share Button Footer */}
         <div className="px-6 pb-6 pt-2">
