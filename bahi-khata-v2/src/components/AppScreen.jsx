@@ -4,6 +4,9 @@ import Portfolio from './Portfolio';
 import Navigation from './Navigation';
 import AnalyticsPage from './AnalyticsPage';
 import AdminPanel from './AdminPanel';
+import Performance from './Performance';
+import PricingPage from './PricingPage';
+import { UpgradeModal } from './Paywall';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { useTheme } from '../hooks/useTheme';
 
@@ -21,10 +24,13 @@ export default function AppScreen({
   pricesUpdatedAt,
   isAdmin,
   myRole,
+  isPro,
+  onCheckout,
   onLogout
 }) {
   const [navOpen, setNavOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [paywall, setPaywall] = useState(null);
   const { theme, toggleTheme, isDark } = useTheme();
 
   const tabs = [
@@ -37,7 +43,9 @@ export default function AppScreen({
     { id: 'gold', label: 'Gold', icon: 'diamond' },
     { id: 'properties', label: 'Properties', icon: 'apartment' },
     { id: 'fds', label: 'Fixed Deposits', icon: 'savings' },
+    { id: 'performance', label: 'Performance', icon: 'trending_up' },
     { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+    { id: 'pricing', label: isPro ? 'Your plan' : 'Upgrade', icon: 'workspace_premium' },
     // Only rendered for admin roles; a non-admin never sees this entry, and the
     // server refuses admin requests regardless of what the browser shows.
     ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: 'admin_panel_settings' }] : [])
@@ -139,6 +147,21 @@ export default function AppScreen({
           />
         )}
 
+        {activeTab === 'performance' && (
+          <Performance
+            portfolio={portfolio}
+            isPro={isPro}
+            onUpgrade={() => setPaywall({
+              feature: 'Returns and benchmarks',
+              description: 'XIRR, CAGR and a like-for-like comparison against the NIFTY 50, Sensex or S&P 500.'
+            })}
+          />
+        )}
+
+        {activeTab === 'pricing' && (
+          <PricingPage plan={isPro ? 'pro' : 'free'} onCheckout={onCheckout} />
+        )}
+
         {activeTab === 'admin' && isAdmin && (
           <AdminPanel myRole={myRole} />
         )}
@@ -147,6 +170,15 @@ export default function AppScreen({
           <AnalyticsPage portfolio={portfolio} stats={stats} isPremium={true} />
         )}
       </main>
+
+      {paywall && (
+        <UpgradeModal
+          feature={paywall.feature}
+          description={paywall.description}
+          onClose={() => setPaywall(null)}
+          onSeePlans={() => { setPaywall(null); setActiveTab('pricing'); }}
+        />
+      )}
     </div>
   );
 }

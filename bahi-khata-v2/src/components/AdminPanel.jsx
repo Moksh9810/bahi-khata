@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabase';
 import { formatCurrency } from '../utils/formatters';
+import { normalisePlan } from '../utils/plans';
+
+const isPro = plan => normalisePlan(plan) === 'pro';
 
 // Admin console. Every figure and every change goes through /api/admin, which
 // runs on the server — the browser never holds a key that can read other
@@ -176,14 +179,14 @@ export default function AdminPanel({ myRole }) {
                     <td className="p-4">
                       <button
                         disabled={!canChangePlan || busyId === u.id + 'set_plan'}
-                        onClick={() => change(u.id, 'set_plan', u.plan === 'premium' ? 'free' : 'premium')}
+                        onClick={() => change(u.id, 'set_plan', isPro(u.plan) ? 'free' : 'pro')}
                         className={`px-3 py-1 rounded-full text-xs disabled:opacity-50 ${
-                          u.plan === 'premium'
+                          isPro(u.plan)
                             ? 'bg-primary/20 text-primary'
                             : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
                         }`}
                       >
-                        {u.plan === 'premium' ? 'Premium — remove' : 'Free — make premium'}
+                        {isPro(u.plan) ? 'Pro — remove' : 'Free — make Pro'}
                       </button>
                     </td>
 
