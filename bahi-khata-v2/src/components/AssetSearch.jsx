@@ -77,13 +77,7 @@ export default function AssetSearch({ type, value, onSelect, placeholder }) {
     }
   };
 
-  const fieldStyle = {
-    background: 'rgba(31,31,41,0.4)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)'
-  };
-
-  return (
+    return (
     <div className="relative" ref={boxRef}>
       <input
         type="text"
@@ -92,8 +86,7 @@ export default function AssetSearch({ type, value, onSelect, placeholder }) {
         onFocus={() => results.length && setOpen(true)}
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full glass-panel rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-        style={fieldStyle}
+        className="w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
       />
 
       {loading && (

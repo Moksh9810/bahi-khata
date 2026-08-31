@@ -33,7 +33,7 @@ export default function AnalyticsPage({ portfolio, stats, isPremium = true }) {
               className={`px-4 py-2 rounded-lg font-label-sm transition-all ${
                 timePeriod === period.value
                   ? 'bg-primary text-on-primary'
-                  : 'bg-white/10 text-on-surface-variant hover:bg-white/20'
+                  : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
               }`}
             >
               {period.label}
@@ -65,13 +65,7 @@ export default function AnalyticsPage({ portfolio, stats, isPremium = true }) {
         {isPremium ? (
           <AdvancedAnalytics portfolio={portfolio} stats={stats} isPremium={true} />
         ) : (
-          <div className="glass-panel rounded-xl p-8 text-center" style={{
-            background: 'rgba(31,31,41,0.4)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderTop: '1px solid rgba(255,255,255,0.1)',
-            borderLeft: '1px solid rgba(255,255,255,0.1)'
-          }}>
+          <div className="card p-8 text-center">
             <p className="material-symbols-outlined text-5xl text-primary mb-4" style={{ fontSize: '3rem' }}>
               lock
             </p>
@@ -81,7 +75,7 @@ export default function AnalyticsPage({ portfolio, stats, isPremium = true }) {
             <p className="text-on-surface-variant mb-6 max-w-md mx-auto">
               Get Sharpe Ratio, Volatility Analysis, Tax Loss Harvesting Suggestions, and Portfolio Health Scores with Premium.
             </p>
-            <button className="px-8 py-3 rounded-lg bg-primary text-on-primary font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all inline-block">
+            <button className="px-8 btn-primary w-full py-3 inline-block">
               Upgrade to Premium - ₹100/Month
             </button>
           </div>
@@ -89,13 +83,7 @@ export default function AnalyticsPage({ portfolio, stats, isPremium = true }) {
       </div>
 
       {/* Performance Summary */}
-      <div className="glass-panel rounded-xl p-6" style={{
-        background: 'rgba(31,31,41,0.4)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.1)',
-        borderLeft: '1px solid rgba(255,255,255,0.1)'
-      }}>
+      <div className="card p-6">
         <h3 className="font-headline-lg text-headline-lg text-on-surface mb-6">
           Performance Summary ({timePeriod === '1m' ? 'Last Month' : timePeriod === '3m' ? 'Last 3 Months' : timePeriod === '6m' ? 'Last 6 Months' : timePeriod === '1y' ? 'Last Year' : 'All Time'})
         </h3>

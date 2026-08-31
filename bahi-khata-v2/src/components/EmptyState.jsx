@@ -12,7 +12,7 @@ export function EmptyDashboard() {
       <p className="text-on-surface-variant max-w-sm mx-auto mb-6">
         Add your first investment to get started tracking your portfolio growth.
       </p>
-      <button className="px-6 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all">
+      <button className="px-6 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:bg-blue-700 transition-all">
         Add First Holding
       </button>
     </div>
@@ -44,7 +44,7 @@ export function EmptyPortfolio({ type }) {
       <p className="text-on-surface-variant max-w-sm mx-auto mb-6">
         Start tracking your {assetType.toLowerCase()} investments by adding your first holding.
       </p>
-      <button className="px-6 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all">
+      <button className="px-6 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:bg-blue-700 transition-all">
         Add {assetType}
       </button>
     </div>

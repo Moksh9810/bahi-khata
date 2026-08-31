@@ -6,14 +6,6 @@ import { formatCurrency } from '../utils/formatters';
 // runs on the server — the browser never holds a key that can read other
 // people's data.
 
-const panel = {
-  background: 'rgba(31,31,41,0.4)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  borderTop: '1px solid rgba(255,255,255,0.1)',
-  borderLeft: '1px solid rgba(255,255,255,0.1)'
-};
-
 const STATUS_STYLE = {
   active: 'bg-success/10 text-success',
   suspended: 'bg-tertiary/10 text-tertiary',
@@ -41,7 +33,7 @@ async function callAdmin(action, body) {
 
 function Stat({ label, value, hint }) {
   return (
-    <div className="glass-panel rounded-xl p-5" style={panel}>
+    <div className="card p-5">
       <p className="text-on-surface-variant text-sm">{label}</p>
       <p className="font-data-lg text-data-lg text-on-surface mt-1">{value}</p>
       {hint && <p className="text-on-surface-variant text-xs mt-1">{hint}</p>}
@@ -112,13 +104,13 @@ export default function AdminPanel({ myRole }) {
               key={t}
               onClick={() => setTab(t)}
               className={`px-4 py-2 rounded-lg text-sm capitalize ${
-                tab === t ? 'bg-primary text-on-primary font-bold' : 'text-on-surface-variant hover:bg-white/5'
+                tab === t ? 'bg-primary text-on-primary font-bold' : 'text-on-surface-variant hover:bg-surface-container'
               }`}
             >
               {t}
             </button>
           ))}
-          <button onClick={load} className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-white/5">
+          <button onClick={load} className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container">
             Reload
           </button>
         </div>
@@ -137,14 +129,13 @@ export default function AdminPanel({ myRole }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search by email"
-            className="w-full md:max-w-sm glass-panel rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-            style={panel}
+            className="w-full md:max-w-sm card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
           />
 
-          <div className="overflow-x-auto rounded-xl" style={panel}>
+          <div className="overflow-x-auto rounded-xl">
             <table className="w-full text-sm min-w-[860px]">
-              <thead className="text-on-surface-variant">
-                <tr className="border-b border-white/10">
+              <thead className="table-header">
+                <tr>
                   <th className="text-left p-4">User</th>
                   <th className="text-left p-4">Joined</th>
                   <th className="text-left p-4">Last login</th>
@@ -156,7 +147,7 @@ export default function AdminPanel({ myRole }) {
               </thead>
               <tbody>
                 {shown.map(u => (
-                  <tr key={u.id} className="border-b border-white/5">
+                  <tr key={u.id} className="border-b border-outline-variant">
                     <td className="p-4 text-on-surface">
                       {u.email || u.id.slice(0, 8)}
                       <span className="block text-on-surface-variant text-xs">
@@ -175,7 +166,6 @@ export default function AdminPanel({ myRole }) {
                         disabled={!canChangePlan || busyId === u.id + 'set_status'}
                         onChange={e => change(u.id, 'set_status', e.target.value)}
                         className={`rounded-full px-3 py-1 text-xs ${STATUS_STYLE[u.status] || ''} disabled:opacity-50`}
-                        style={{ background: 'rgba(31,31,41,0.8)' }}
                       >
                         <option value="active">active</option>
                         <option value="suspended">suspended</option>
@@ -190,7 +180,7 @@ export default function AdminPanel({ myRole }) {
                         className={`px-3 py-1 rounded-full text-xs disabled:opacity-50 ${
                           u.plan === 'premium'
                             ? 'bg-primary/20 text-primary'
-                            : 'bg-white/5 text-on-surface-variant hover:bg-white/10'
+                            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-highest'
                         }`}
                       >
                         {u.plan === 'premium' ? 'Premium — remove' : 'Free — make premium'}
@@ -203,7 +193,6 @@ export default function AdminPanel({ myRole }) {
                         disabled={!canChangeRole || busyId === u.id + 'set_role'}
                         onChange={e => change(u.id, 'set_role', e.target.value)}
                         className="rounded-lg px-2 py-1 text-xs text-on-surface disabled:opacity-50"
-                        style={{ background: 'rgba(31,31,41,0.8)' }}
                       >
                         <option value="user">user</option>
                         <option value="support">support</option>
@@ -238,7 +227,7 @@ export default function AdminPanel({ myRole }) {
             <Stat label="Active users" value={`${metrics.dau} / ${metrics.mau}`} hint="today / 30 days" />
           </div>
 
-          <div className="glass-panel rounded-xl p-6" style={panel}>
+          <div className="card p-6">
             <h3 className="text-on-surface mb-4">Where the money sits</h3>
             {Object.entries(metrics.allocation || {}).sort((a, b) => b[1] - a[1]).map(([type, value]) => {
               const pct = metrics.aum > 0 ? (value / metrics.aum) * 100 : 0;
@@ -250,7 +239,7 @@ export default function AdminPanel({ myRole }) {
                       {formatCurrency(value)} · {pct.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-white/5 overflow-hidden">
+                  <div className="h-2 rounded-full bg-surface-container overflow-hidden">
                     <div className="h-full bg-primary" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
@@ -265,9 +254,9 @@ export default function AdminPanel({ myRole }) {
 
       {/* ------------------------------------------------------------ AUDIT */}
       {!loading && tab === 'audit' && (
-        <div className="glass-panel rounded-xl p-2" style={panel}>
+        <div className="card p-2">
           {audit.map(e => (
-            <div key={e.id} className="p-4 border-b border-white/5 text-sm">
+            <div key={e.id} className="p-4 border-b border-outline-variant text-sm">
               <p className="text-on-surface">
                 <span className="text-primary">{e.admin_email || 'admin'}</span>
                 {' '}changed {e.details?.field} from{' '}

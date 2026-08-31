@@ -24,23 +24,13 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
   return (
     <div className="space-y-8">
       {/* Summary Strip */}
-      <div className="glass-panel rounded-2xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 sticky top-20 z-40"
-        style={{
-          background: 'rgba(31,31,41,0.4)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          borderLeft: '1px solid rgba(255,255,255,0.1)'
-        }}>
+      <div className="card p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 sticky top-20 z-40">
         <div>
           <p className="text-on-surface-variant mb-1 uppercase tracking-wider text-xs">
             Total Net P/L
           </p>
           <div className="flex items-baseline gap-4">
-            <h2 className={`font-display-lg text-display-lg ${stats.pl >= 0 ? 'text-success' : 'text-error'}`}
-              style={{
-                textShadow: stats.pl >= 0 ? '0 0 10px rgba(74,222,128,0.3)' : '0 0 10px rgba(255,180,171,0.3)'
-              }}>
+            <h2 className={`font-display-lg text-display-lg ${stats.pl >= 0 ? 'text-success' : 'text-error'}`}>
               {formatCurrency(stats.pl)}
             </h2>
             <span className={`font-data-lg text-data-lg ${stats.pl >= 0 ? 'bg-success/10 text-success' : 'bg-error/10 text-error'} px-2 py-1 rounded`}>
@@ -48,12 +38,12 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
             </span>
           </div>
         </div>
-        <div className="flex gap-8 w-full md:w-auto border-t border-white/10 md:border-t-0 pt-4 md:pt-0">
+        <div className="flex gap-8 w-full md:w-auto border-t border-outline-variant md:border-t-0 pt-4 md:pt-0">
           <div>
             <p className="text-on-surface-variant mb-1 text-sm">Invested</p>
             <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.invested)}</p>
           </div>
-          <div className="w-px bg-white/10 h-10 self-center"></div>
+          <div className="w-px bg-outline-variant h-10 self-center"></div>
           <div>
             <p className="text-on-surface-variant mb-1 text-sm">Current Value</p>
             <p className="font-data-lg text-data-lg text-on-surface">{formatCurrency(stats.currentValue)}</p>
@@ -109,16 +99,7 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
               key={cat.data}
               type="button"
               onClick={() => onSelectTab && onSelectTab(cat.data)}
-              className="glass-panel rounded-xl p-5 flex flex-col gap-3 text-left hover:ring-2 hover:ring-primary/40"
-              style={{
-                background: 'rgba(31,31,41,0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                borderLeft: '1px solid rgba(255,255,255,0.1)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}>
+              className="card p-5 flex flex-col gap-3 text-left hover:ring-2 hover:ring-primary/40">
               <div className="flex justify-between items-center">
                 <span className={`material-symbols-outlined text-3xl ${cat.color}`}>
                   {cat.icon}

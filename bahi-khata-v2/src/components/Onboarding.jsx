@@ -164,7 +164,7 @@ export default function Onboarding({ onComplete }) {
                   setStep(step + 1);
                 }
               }}
-              className="flex-1 px-4 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all disabled:opacity-50"
+              className="flex-1 px-4 py-3 rounded-lg bg-primary text-on-primary font-label-sm hover:bg-blue-700 transition-all disabled:opacity-50"
               disabled={step === 1 && !portfolioName}
             >
               {isLastStep ? 'Start Investing' : 'Next'}

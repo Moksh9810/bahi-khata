@@ -116,7 +116,7 @@ export default function AppScreen({
       {/* OVERLAY */}
       {navOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm"
+          className="fixed inset-0 bg-slate-900/40 z-40 backdrop-blur-sm"
           onClick={() => setNavOpen(false)}
         ></div>
       )}

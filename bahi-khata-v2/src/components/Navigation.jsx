@@ -5,18 +5,12 @@ export default function Navigation({ tabs, activeTab, onTabChange, isOpen, onClo
       <nav
         className={`fixed left-0 top-0 h-full w-72 z-[60] flex flex-col py-6 transition-all duration-200 md:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-        style={{
-          background: 'rgba(26, 26, 37, 0.95)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)',
-          borderRight: '1px solid rgba(255,255,255,0.1)'
-        }}>
+        }`}>
         <div className="px-6 mb-8 flex justify-between items-center">
           <h2 className="font-headline-lg text-headline-lg text-primary">Bahi-Khata</h2>
           <button
             onClick={onClose}
-            className="text-on-surface-variant p-2 hover:bg-white/5 rounded-full md:hidden"
+            className="text-on-surface-variant p-2 hover:bg-surface-container rounded-full md:hidden"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
@@ -30,7 +24,7 @@ export default function Navigation({ tabs, activeTab, onTabChange, isOpen, onClo
                 className={`w-full flex items-center gap-4 px-6 py-3 rounded-lg transition-all ${
                   activeTab === tab.id
                     ? 'bg-primary/20 text-primary border-l-4 border-primary'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-white/5'
+                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container'
                 }`}
                 style={{
                   paddingLeft: activeTab === tab.id ? 'calc(24px - 4px)' : '24px'

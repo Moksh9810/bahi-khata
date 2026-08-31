@@ -7,12 +7,6 @@ import { formatCurrency } from '../utils/formatters';
 // in the preview and pressed Import — bringing money in silently is a good way
 // to end up with a portfolio nobody trusts.
 
-const panel = {
-  background: 'rgba(31,31,41,0.4)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)'
-};
-
 // Types we can look up online; the rest import fine but keep manual prices.
 const LOOKUP = { stocks: 'stock', mf: 'mf', crypto: 'crypto' };
 
@@ -128,8 +122,8 @@ export default function ImportHoldings({ type, onImport, onClose }) {
   const total = (rows || []).reduce((sum, r) => sum + (r.quantity || 0) * (r.currentPrice || r.buyPrice || 0), 0);
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center p-4 overflow-y-auto backdrop-blur-sm">
-      <div className="rounded-2xl p-6 md:p-8 w-full max-w-3xl my-8" style={{ ...panel, background: 'rgba(31,31,41,0.92)' }}>
+    <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-start justify-center p-4 overflow-y-auto backdrop-blur-sm">
+      <div className="rounded-2xl p-6 md:p-8 w-full max-w-3xl my-8">
         <div className="flex justify-between items-start mb-2">
           <h2 className="font-headline-lg text-headline-lg text-on-surface">Import {label}s</h2>
           <button onClick={onClose} className="text-on-surface-variant hover:text-on-surface">
@@ -162,7 +156,6 @@ export default function ImportHoldings({ type, onImport, onClose }) {
                 ? 'Scheme Name\tUnits\tAverage NAV\nAxis ELSS Tax Saver Fund\t2.33\t2145'
                 : 'Symbol\tQuantity\tAverage Price\nHDFCBANK\t10\t769.55'}
               className="w-full rounded-lg px-4 py-3 text-on-surface font-mono text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              style={panel}
             />
             <button
               onClick={() => readTable(text)}
@@ -192,17 +185,17 @@ export default function ImportHoldings({ type, onImport, onClose }) {
                 )}
                 <button
                   onClick={() => { setRows(null); setNote(''); setError(''); }}
-                  className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-white/5"
+                  className="px-4 py-2 rounded-lg text-sm text-on-surface-variant hover:bg-surface-container"
                 >
                   Start over
                 </button>
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-lg" style={panel}>
+            <div className="overflow-x-auto rounded-lg">
               <table className="w-full text-sm min-w-[600px]">
                 <thead className="text-on-surface-variant">
-                  <tr className="border-b border-white/10">
+                  <tr className="border-b border-outline-variant">
                     <th className="text-left p-3">{isMF ? 'Scheme' : 'Name'}</th>
                     <th className="text-right p-3">{isMF ? 'Units' : 'Qty'}</th>
                     <th className="text-right p-3">{isMF ? 'Buy NAV' : 'Buy price'}</th>
@@ -214,12 +207,12 @@ export default function ImportHoldings({ type, onImport, onClose }) {
                   {rows.map(r => {
                     const bad = problems.find(p => p.id === r._id)?.list || [];
                     return (
-                      <tr key={r._id} className={`border-b border-white/5 ${bad.length ? 'bg-error/5' : ''}`}>
+                      <tr key={r._id} className={`border-b border-outline-variant ${bad.length ? 'bg-error/5' : ''}`}>
                         <td className="p-2">
                           <input
                             value={r.name}
                             onChange={e => edit(r._id, 'name', e.target.value)}
-                            className="w-full bg-transparent text-on-surface px-2 py-1 rounded focus:outline-none focus:bg-white/5"
+                            className="w-full bg-transparent text-on-surface px-2 py-1 rounded focus:outline-none focus:bg-surface-container"
                           />
                           {r.matchedAs && r.matchedAs !== r.name && (
                             <span className="block text-on-surface-variant text-xs px-2">matched: {r.matchedAs}</span>
@@ -235,7 +228,7 @@ export default function ImportHoldings({ type, onImport, onClose }) {
                               step="any"
                               value={r[f] ?? ''}
                               onChange={e => edit(r._id, f, e.target.value)}
-                              className="w-24 bg-transparent text-on-surface text-right px-2 py-1 rounded focus:outline-none focus:bg-white/5"
+                              className="w-24 bg-transparent text-on-surface text-right px-2 py-1 rounded focus:outline-none focus:bg-surface-container"
                             />
                           </td>
                         ))}

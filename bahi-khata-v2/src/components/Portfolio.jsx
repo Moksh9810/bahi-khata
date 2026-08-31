@@ -120,7 +120,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-primary text-on-primary font-label-sm font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all"
+            className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-primary text-on-primary font-label-sm font-bold hover:bg-blue-700 transition-all"
           >
             <span className="material-symbols-outlined">add</span>
             Add {labels[type]}
@@ -146,20 +146,13 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
           holdings.map((h) => (
             <div
               key={h.id}
-              className="glass-panel rounded-xl p-5 flex flex-col gap-4"
-              style={{
-                background: 'rgba(31,31,41,0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderTop: '1px solid rgba(255,255,255,0.1)',
-                borderLeft: '1px solid rgba(255,255,255,0.1)'
-              }}>
+              className="card p-5 flex flex-col gap-4">
               <div>
                 <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">
                   {h.symbol || h.scheme || h.name}
                 </h3>
               </div>
-              <div className="py-3 border-y border-white/5 space-y-2">
+              <div className="py-3 border-y border-outline-variant space-y-2">
                 {type === 'stocks' && (
                   <>
                     <p className="text-on-surface-variant text-sm">
@@ -294,14 +287,9 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
           <div
-            className="bg-surface rounded-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto"
-            style={{
-              background: 'rgba(31,31,41,0.8)',
-              backdropFilter: 'blur(20px)',
-              WebkitBackdropFilter: 'blur(20px)'
-            }}>
+            className="bg-surface rounded-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
             <h2 className="font-headline-lg text-headline-lg text-on-surface mb-6">
               Add {labels[type]}
             </h2>
@@ -325,14 +313,9 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
                     value={formData[field.name] || ''}
                     onChange={handleInputChange}
                     step={field.step}
-                    className={`w-full glass-panel rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 ${
+                    className={`w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 ${
                       errors[field.name] ? 'focus:ring-error ring-2 ring-error' : 'focus:ring-primary'
                     }`}
-                    style={{
-                      background: 'rgba(31,31,41,0.4)',
-                      backdropFilter: 'blur(20px)',
-                      WebkitBackdropFilter: 'blur(20px)'
-                    }}
                     required={field.required}
                   />
                   )}
@@ -351,7 +334,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 py-3 rounded-lg bg-primary text-on-primary font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all"
+                  className="flex-1 btn-primary w-full py-3"
                 >
                   Save
                 </button>
@@ -362,7 +345,7 @@ export default function Portfolio({ type, holdings, onAdd, onRemove, onImport })
                     setFormData({});
                     setErrors({});
                   }}
-                  className="flex-1 py-3 rounded-lg border border-white/10 text-on-surface hover:bg-white/5 transition-all"
+                  className="flex-1 py-3 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-all"
                 >
                   Cancel
                 </button>

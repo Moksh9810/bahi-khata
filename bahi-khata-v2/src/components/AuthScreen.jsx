@@ -26,18 +26,12 @@ export default function AuthScreen({ onSignup, onSignin }) {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 dark">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet"/>
 
       <div className="w-full max-w-md">
-        <div className="glass-panel rounded-2xl p-8" style={{
-          background: 'rgba(31,31,41,0.4)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderTop: '1px solid rgba(255,255,255,0.1)',
-          borderLeft: '1px solid rgba(255,255,255,0.1)'
-        }}>
+        <div className="card p-8">
           <h1 className="text-headline-lg font-headline-lg text-primary mb-2">
             ₹ Bahi-Khata
           </h1>
@@ -51,12 +45,7 @@ export default function AuthScreen({ onSignup, onSignin }) {
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full glass-panel rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              style={{
-                background: 'rgba(31,31,41,0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-              }}
+              className="w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
 
@@ -65,12 +54,7 @@ export default function AuthScreen({ onSignup, onSignin }) {
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full glass-panel rounded-lg px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-              style={{
-                background: 'rgba(31,31,41,0.4)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-              }}
+              className="w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
               required
             />
 
@@ -83,7 +67,7 @@ export default function AuthScreen({ onSignup, onSignin }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-lg bg-primary text-on-primary font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all disabled:opacity-50"
+              className="w-full btn-primary w-full py-3 disabled:opacity-50"
             >
               {loading ? 'Loading...' : (isSignup ? 'Sign Up' : 'Login')}
             </button>
