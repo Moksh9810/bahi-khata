@@ -3,6 +3,7 @@ import Dashboard from './Dashboard';
 import Portfolio from './Portfolio';
 import Navigation from './Navigation';
 import AnalyticsPage from './AnalyticsPage';
+import AdminPanel from './AdminPanel';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { useTheme } from '../hooks/useTheme';
 
@@ -17,6 +18,8 @@ export default function AppScreen({
   onUpdateHolding,
   onRefreshPrices,
   pricesUpdatedAt,
+  isAdmin,
+  myRole,
   onLogout
 }) {
   const [navOpen, setNavOpen] = useState(false);
@@ -33,7 +36,10 @@ export default function AppScreen({
     { id: 'gold', label: 'Gold', icon: 'diamond' },
     { id: 'properties', label: 'Properties', icon: 'apartment' },
     { id: 'fds', label: 'Fixed Deposits', icon: 'savings' },
-    { id: 'analytics', label: 'Analytics', icon: 'analytics' }
+    { id: 'analytics', label: 'Analytics', icon: 'analytics' },
+    // Only rendered for admin roles; a non-admin never sees this entry, and the
+    // server refuses admin requests regardless of what the browser shows.
+    ...(isAdmin ? [{ id: 'admin', label: 'Admin', icon: 'admin_panel_settings' }] : [])
   ];
 
   return (
@@ -129,6 +135,10 @@ export default function AppScreen({
             onRemove={onRemoveHolding}
             onUpdate={onUpdateHolding}
           />
+        )}
+
+        {activeTab === 'admin' && isAdmin && (
+          <AdminPanel myRole={myRole} />
         )}
 
         {activeTab === 'analytics' && (
