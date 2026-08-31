@@ -42,10 +42,12 @@ export const formSchemas = {
   ],
 
   gold: [
-    { name: 'name', label: 'Gold Type', type: 'text', placeholder: 'e.g., Physical, SGBs, ETF', required: true },
+    // Write the purity into the name — "22K bangles", "24K coins" — and the
+    // live rate is adjusted for it. Anything unmarked is priced as 24K.
+    { name: 'name', label: 'Gold Type', type: 'text', placeholder: 'e.g., 22K jewellery, 24K coins, SGB', required: true },
     { name: 'quantity', label: 'Quantity (grams)', type: 'number', placeholder: 'Weight in grams', step: 0.01, required: true },
     { name: 'buy_price', label: 'Buy Price (₹/gram)', type: 'number', placeholder: 'Price per gram', step: 0.01, required: true },
-    { name: 'current_price', label: 'Current Price (₹/gram)', type: 'number', placeholder: 'Current price per gram', step: 0.01, required: false },
+    { name: 'current_price', label: 'Current Price (₹/gram)', type: 'number', placeholder: 'Filled automatically from the live rate', step: 0.01, required: false },
     { name: 'purchase_date', label: 'Purchase Date', type: 'date', required: false },
   ],
 
