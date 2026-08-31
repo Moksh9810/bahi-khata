@@ -5,6 +5,7 @@ import { AdvancedAnalytics } from './Analytics';
 import { SkeletonDashboard, SkeletonChart } from './Skeleton';
 import { EmptyDashboard } from './EmptyState';
 import { usePortfolioStats, useCategoryPerformance } from '../utils/performance';
+import { calculateAssetCurrentValue } from '../utils/calculations';
 
 function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
   const portfolioStats = usePortfolioStats(portfolio);
@@ -63,9 +64,6 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
           { label: 'Properties', icon: 'apartment', color: 'text-green-500', data: 'properties' },
           { label: 'Fixed Deposits', icon: 'savings', color: 'text-blue-500', data: 'fds' }
         ].map((cat) => {
-          // `data` is already the portfolio key. The old code appended an 's'
-          // and read portfolio['stockss'] / portfolio['mfs'], so every card
-          // showed zero however much was actually held.
           const holdings = portfolio[cat.data] || [];
           let invested = 0, current = 0;
 
@@ -76,9 +74,12 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
             } else if (cat.data === 'mf') {
               invested += (h.units || 0) * (h.buy_nav || 0);
               current += (h.units || 0) * (h.current_nav || h.buy_nav || 0);
-            } else if (cat.data === 'bonds' || cat.data === 'loans' || cat.data === 'fds') {
+            } else if (cat.data === 'bonds') {
               invested += h.quantity || 0;
-              current += h.quantity || 0;
+              current += calculateAssetCurrentValue(h, 'bonds');
+            } else if (cat.data === 'loans') {
+              invested += h.quantity || 0;
+              current += calculateAssetCurrentValue(h, 'loans');
             } else if (cat.data === 'crypto') {
               invested += (h.quantity || 0) * (h.buy_price || 0);
               current += (h.quantity || 0) * (h.current_price || h.buy_price || 0);
@@ -88,6 +89,9 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
             } else if (cat.data === 'properties') {
               invested += h.quantity || 0;
               current += h.buy_price || 0;
+            } else if (cat.data === 'fds') {
+              invested += h.quantity || 0;
+              current += h.quantity || 0;
             }
           });
 
@@ -117,21 +121,17 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
         })}
       </div>
 
-      {/* Charts Section */}
       <div className="space-y-6">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mt-8">
           Portfolio Insights
         </h2>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <PortfolioGrowthChart portfolio={portfolio} stats={stats} />
           <AssetAllocationChart portfolio={portfolio} stats={stats} />
         </div>
-
         <CategoryPerformanceChart portfolio={portfolio} stats={stats} />
       </div>
 
-      {/* Advanced Analytics */}
       <div className="mt-12">
         <h2 className="font-headline-lg text-headline-lg text-on-surface mb-6">
           Advanced Analytics
@@ -143,7 +143,5 @@ function DashboardContent({ portfolio, stats, isLoading, onSelectTab }) {
 }
 
 const Dashboard = memo(DashboardContent);
-
 Dashboard.displayName = 'Dashboard';
-
 export default Dashboard;
