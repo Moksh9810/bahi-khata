@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { formatCurrency, formatPercent } from '../utils/formatters';
+import { formatCurrency } from '../utils/formatters';
 import { calculateAssetCurrentValue, calculateAssetPL } from '../utils/calculations';
 import TransactionHistoryModal from './TransactionHistoryModal';
+import CASImportModal from './CASImportModal';
 
 export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRemove, onUpdate }) {
   const [showHistoryModal, setShowHistoryModal] = useState(null);
+  const [showCASModal, setShowCASModal] = useState(false);
 
-  // Asset configuration dictionary
   const config = {
     stocks: { title: 'Stocks', icon: 'show_chart', showAveraging: true },
     mf: { title: 'Mutual Funds', icon: 'account_balance', showAveraging: true },
@@ -36,13 +37,13 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
         </div>
 
         <div className="flex gap-3">
-          {onImport && ['stocks', 'mf'].includes(type) && (
+          {type === 'mf' && (
             <button 
-              onClick={() => onImport(type)}
+              onClick={() => setShowCASModal(true)}
               className="px-4 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 transition-all font-bold text-sm flex items-center gap-2"
             >
               <span className="material-symbols-outlined">upload_file</span>
-              Import File
+              Import CAS PDF
             </button>
           )}
           <button 
@@ -67,10 +68,9 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {holdings.map((item, index) => {
             
-            // Universal calculations based on asset type
             const invested = (item.quantity || item.units || 1) * (item.buy_price || item.buy_nav || item.invested_amount || 0);
             const current = calculateAssetCurrentValue(item, type);
-            const { pl, pct } = calculateAssetPL(invested, current);
+            const { pl } = calculateAssetPL(invested, current);
             const isPositive = pl >= 0;
 
             return (
@@ -84,10 +84,7 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
                     </p>
                   </div>
                   
-                  {/* Action Buttons (History, Edit, Delete) */}
                   <div className="flex items-center gap-1 bg-surface-container rounded-lg p-1">
-                    
-                    {/* ONLY SHOW HISTORY BUTTON FOR ASSETS THAT SUPPORT AVERAGING */}
                     {currentConfig.showAveraging && (
                       <button 
                         onClick={() => setShowHistoryModal(item)}
@@ -97,7 +94,6 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
                         <span className="material-symbols-outlined text-sm">history</span>
                       </button>
                     )}
-
                     <button 
                       onClick={() => onUpdate(type, item)}
                       className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-on-surface/10 rounded-md transition-colors"
@@ -105,7 +101,6 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
                     >
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </button>
-
                     <button 
                       onClick={() => onRemove(type, item.id)}
                       className="p-1.5 text-error hover:bg-error/10 rounded-md transition-colors"
@@ -143,12 +138,22 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
         </div>
       )}
 
-      {/* RENDER HISTORY MODAL IF ACTIVE */}
+      {/* RENDER HISTORY MODAL */}
       {showHistoryModal && (
         <TransactionHistoryModal 
           item={showHistoryModal} 
           type={type} 
           onClose={() => setShowHistoryModal(null)} 
+        />
+      )}
+
+      {/* RENDER CAS IMPORT MODAL */}
+      {showCASModal && (
+        <CASImportModal 
+          onClose={() => setShowCASModal(false)}
+          onImportSuccess={(funds) => {
+            funds.forEach(fund => onAdd('mf', fund)); 
+          }}
         />
       )}
 
