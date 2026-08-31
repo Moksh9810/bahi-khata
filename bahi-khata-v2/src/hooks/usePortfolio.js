@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { holdingsService } from '../services/supabase';
 import { usePortfolioStore } from '../store/portfolioStore';
 
-export const usePortfolio = (userId) => {
+export const usePortfolio = (userId, portfolioId = null) => {
   const portfolio = usePortfolioStore(state => state.portfolio);
   const setPortfolio = usePortfolioStore(state => state.setPortfolio);
   const setLoading = usePortfolioStore(state => state.setLoading);
@@ -19,15 +19,16 @@ export const usePortfolio = (userId) => {
 
   // Load portfolio on mount or when userId changes
   useEffect(() => {
+    // Reloads when the user switches portfolio, not only on sign-in.
     if (userId) {
       loadPortfolio();
     }
-  }, [userId]);
+  }, [userId, portfolioId]);
 
   const loadPortfolio = async () => {
     setLoading(true);
     try {
-      const holdings = await holdingsService.getHoldings(userId);
+      const holdings = await holdingsService.getHoldings(userId, portfolioId);
 
       // Group holdings by type
       const grouped = {
@@ -78,7 +79,7 @@ export const usePortfolio = (userId) => {
       const holding = await holdingsService.addHolding(userId, {
         type,
         ...holdingData
-      });
+      }, portfolioId);
 
       addHolding(type, holding);
       return holding;
@@ -90,7 +91,7 @@ export const usePortfolio = (userId) => {
 
   const importHoldings = async (holdings) => {
     try {
-      const saved = await holdingsService.addHoldings(userId, holdings);
+      const saved = await holdingsService.addHoldings(userId, holdings, portfolioId);
       // Reload rather than patching the store by hand: the rows come back with
       // their database ids and any server-side defaults applied.
       await loadPortfolio();
