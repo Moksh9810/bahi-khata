@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { formSchemas, assetTypeLabels, assetTypeIcons } from '../utils/formSchemas';
 import AssetSearch from './AssetSearch';
+import ImportHoldings from './ImportHoldings';
 
 // Asset types we can look up live. `nameField` is the form field the picked
 // name goes into; `priceField` is filled with the fetched price.
@@ -13,8 +14,9 @@ const SEARCHABLE = {
   crypto: { source: 'crypto', nameField: 'symbol', priceField: 'current_price' }
 };
 
-export default function Portfolio({ type, holdings, onAdd, onRemove }) {
+export default function Portfolio({ type, holdings, onAdd, onRemove, onImport }) {
   const [showModal, setShowModal] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
 
@@ -107,14 +109,32 @@ export default function Portfolio({ type, holdings, onAdd, onRemove }) {
             Manage your {labels[type].toLowerCase()}s
           </p>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-primary text-on-primary font-label-sm font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all"
-        >
-          <span className="material-symbols-outlined">add</span>
-          Add {labels[type]}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-primary border border-outline-variant hover:bg-primary/10 transition-all"
+            title="Bring in many holdings at once from a broker file"
+          >
+            <span className="material-symbols-outlined">upload_file</span>
+            Import
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-primary text-on-primary font-label-sm font-bold hover:shadow-[0_0_15px_rgba(208,188,255,0.3)] transition-all"
+          >
+            <span className="material-symbols-outlined">add</span>
+            Add {labels[type]}
+          </button>
+        </div>
       </div>
+
+      {showImport && (
+        <ImportHoldings
+          type={type}
+          onImport={onImport}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {/* Holdings Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

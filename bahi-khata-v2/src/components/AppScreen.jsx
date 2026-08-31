@@ -14,6 +14,7 @@ export default function AppScreen({
   activeTab,
   setActiveTab,
   onAddHolding,
+  onImportHoldings,
   onRemoveHolding,
   onUpdateHolding,
   onRefreshPrices,
@@ -132,6 +133,7 @@ export default function AppScreen({
             holdings={portfolio[activeTab] || []}
             stats={stats}
             onAdd={onAddHolding}
+            onImport={onImportHoldings}
             onRemove={onRemoveHolding}
             onUpdate={onUpdateHolding}
           />
