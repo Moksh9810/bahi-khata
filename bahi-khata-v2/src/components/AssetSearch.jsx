@@ -93,17 +93,21 @@ export default function AssetSearch({ type, value, onSelect, placeholder }) {
         <span className="absolute right-3 top-3.5 text-xs text-on-surface-variant">…</span>
       )}
 
+      {/* The background must come from the theme. It used to be a hard-coded
+          near-black, which left dark text on a dark panel in light mode — the
+          suggestions were there, just unreadable. */}
       {open && results.length > 0 && (
         <ul
-          className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-lg border border-outline-variant"
-          style={{ background: 'rgb(31,31,41)' }}
+          className="absolute z-50 mt-1 w-full max-h-60 overflow-y-auto rounded-lg
+                     border border-outline-variant bg-surface shadow-lg
+                     divide-y divide-outline-variant"
         >
           {results.map(item => (
             <li key={item.id}>
               <button
                 type="button"
                 onClick={() => pick(item)}
-                className="w-full text-left px-4 py-2 hover:bg-primary/10"
+                className="w-full text-left px-4 py-2 hover:bg-primary/10 focus:bg-primary/10 focus:outline-none"
               >
                 <span className="block text-on-surface text-sm">{item.label}</span>
                 {item.sub && (
