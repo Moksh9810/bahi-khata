@@ -8,6 +8,7 @@ import Performance from './Performance';
 import TaxEstimator from './TaxEstimator';
 import PricingPage from './PricingPage';
 import { UpgradeModal } from './Paywall';
+import PortfolioBar from './PortfolioBar';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { useTheme } from '../hooks/useTheme';
 
@@ -26,6 +27,7 @@ export default function AppScreen({
   isAdmin,
   myRole,
   isPro,
+  portfolioList,
   onCheckout,
   paymentsAvailable,
   onLogout
@@ -134,6 +136,22 @@ export default function AppScreen({
 
       {/* MAIN CONTENT */}
       <main className="pt-20 px-5 md:ml-72 pb-24 md:px-8 max-w-7xl mx-auto flex flex-col gap-8">
+        {portfolioList && (
+          <PortfolioBar
+            portfolios={portfolioList.portfolios}
+            activeId={portfolioList.activeId}
+            active={portfolioList.active}
+            isPro={isPro}
+            onSelect={portfolioList.select}
+            onCreate={portfolioList.create}
+            onRename={portfolioList.rename}
+            onRemove={portfolioList.remove}
+            holdings={Object.values(portfolio || {}).flat().filter(Boolean)}
+            userEmail={user?.email}
+            onUpgrade={(feature, description) => setPaywall({ feature, description })}
+          />
+        )}
+
         {activeTab === 'dashboard' && (
           <Dashboard portfolio={portfolio} stats={stats} onSelectTab={setActiveTab} />
         )}
