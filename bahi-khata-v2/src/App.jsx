@@ -12,18 +12,31 @@ export default function App() {
   const { user, loading: authLoading, signin, signup, logout } = useAuth();
   const {
     portfolio, stats, addHolding, removeHolding, updateHolding,
-    refreshPrices, pricesUpdatedAt
+    refreshPrices, pricesUpdatedAt, loaded: portfolioLoaded
   } = usePortfolio(user?.id);
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showOnboarding, setShowOnboarding] = useState(false);
 
+  const hasHoldings = Object.values(portfolio || {}).some(list => Array.isArray(list) && list.length > 0);
+
   useEffect(() => {
-    if (user && !authLoading) {
-      const onboarding = getOnboardingState();
-      setShowOnboarding(!onboarding.completed);
+    // Wait for the first load to finish, otherwise an existing user would see
+    // onboarding flash before their holdings arrive.
+    if (!user || authLoading || !portfolioLoaded) return;
+
+    // The "have you finished onboarding" flag lives in localStorage, which is
+    // per browser. On a second device that flag is missing, so a returning user
+    // was sent back through onboarding and could not see the portfolio they
+    // already had. Anyone with holdings has clearly onboarded already.
+    if (hasHoldings) {
+      setShowOnboarding(false);
+      setOnboardingComplete({ portfolioName: 'My Portfolio', categories: [] });
+      return;
     }
-  }, [user, authLoading]);
+
+    setShowOnboarding(!getOnboardingState().completed);
+  }, [user, authLoading, portfolioLoaded, hasHoldings]);
 
   if (authLoading) {
     return (
