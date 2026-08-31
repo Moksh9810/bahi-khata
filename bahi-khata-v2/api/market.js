@@ -12,6 +12,46 @@
 
 const UA = 'Mozilla/5.0 (compatible; BahiKhata/1.0)';
 
+// ------------------------------------------------------------ text matching
+// Matching what somebody types against ~12,000 scheme names.
+//
+// The obvious approach — name.includes(query) — fails on nearly everything a
+// real person types. "uti nifty next 50 index fund direct growth" never
+// matches "UTI - Nifty Next 50 Index Fund": a hyphen sits where the space is,
+// and the plan and option are separate columns, so "direct" and "growth" are
+// not in the name at all. It also returned "Franklin India Liquid Fund-
+// Institution" for the query "uti", because those three letters happen to sit
+// inside "Institution".
+//
+// Instead: strip punctuation, split into words, and require every word typed
+// to begin some word in the scheme.
+const normalise = s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/** Levenshtein distance, abandoned as soon as it passes `max`. */
+function within(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return false;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (row[j] < best) best = row[j];
+    }
+    if (best > max) return false;
+    prev = row;
+  }
+  return prev[b.length] <= max;
+}
+
+// A word matches a typed token when it starts with it. Only if nothing matches
+// at all do we retry allowing one wrong letter, so "utl nifty" still finds UTI
+// without loosening every other search.
+const hits = (words, token, typos) =>
+  words.some(w => w.startsWith(token)) ||
+  (typos > 0 && token.length >= 3 &&
+    words.some(w => within(w.slice(0, token.length + 1), token, 1)));
+
 // ---------------------------------------------------------------- AMFI (MF)
 // AMFI publishes one big semicolon-separated text file of every scheme's NAV,
 // refreshed once per business day. It is a few MB, so we parse it once and keep
@@ -40,11 +80,79 @@ async function getAmfiSchemes() {
     const name = p[3].trim();
     const nav = parseFloat(p[6]);
     if (!/^\d+$/.test(code) || !name || !isFinite(nav)) continue;
-    schemes.push({ code, name, plan: p[4].trim(), option: p[5].trim(), nav, date: p[7].trim() });
+
+    const plan = p[4].trim();
+    const option = p[5].trim();
+    // Normalise once here, not on every keystroke: search runs over the whole
+    // file, and doing this per request would cost ~24,000 regex passes a time.
+    schemes.push({
+      code, name, plan, option, nav, date: p[7].trim(),
+      nameWords: normalise(name).split(' '),
+      allWords: normalise(`${name} ${plan} ${option}`).split(' ')
+    });
   }
 
   if (schemes.length) amfiCache = { at: Date.now(), schemes };
   return schemes;
+}
+
+/**
+ * Rank schemes against a typed query.
+ *
+ * Ranking matters as much as matching: AMFI's file lists long-dead segregated
+ * side-pockets first, so taking the first ten matches in file order handed
+ * back a screen of wound-up portfolios with a NAV of zero.
+ */
+function mfSearch(schemes, term, limit = 12) {
+  const tokens = normalise(term).split(' ').filter(Boolean);
+  // One letter matches thousands of schemes and tells the user nothing.
+  if (!tokens.length || tokens.join('').length < 2) return [];
+  const phrase = tokens.join(' ');
+
+  const collect = typos => {
+    const out = [];
+    const seen = new Set();
+
+    for (const s of schemes) {
+      if (!tokens.every(t => hits(s.allWords, t, typos))) continue;
+
+      // Direct and Regular hold different NAVs, so they are separate choices,
+      // not duplicates. Collapsing by name alone hid one of them entirely.
+      const key = `${s.name}|${s.plan}|${s.option}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const inName = tokens.every(t => hits(s.nameWords, t, typos));
+      // Side-pockets and wound-up schemes: still findable for anyone who holds
+      // one, but never ahead of a fund somebody can actually be invested in.
+      const dead = /segregated|wound\s*up/i.test(s.name) || !(s.nav > 0);
+
+      let score = 0;
+      if (inName) score += 60;
+      if (s.nameWords.join(' ').startsWith(phrase)) score += 40;
+      if (dead) score -= 500;
+      if (/direct/i.test(s.plan)) score += 8;
+      if (/growth/i.test(s.option)) score += 4;
+      score -= s.name.length / 25; // a shorter name is a closer fit
+
+      out.push({ s, score });
+    }
+    return out;
+  };
+
+  let found = collect(0);
+  if (!found.length) found = collect(1); // nothing at all matched — allow a typo
+
+  return found
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map(({ s }) => ({
+      id: s.code,
+      label: s.name,
+      sub: [s.plan, s.option, s.nav > 0 ? `NAV ₹${s.nav}` : 'no NAV published']
+        .filter(Boolean)
+        .join(' · ')
+    }));
 }
 
 // -------------------------------------------------------------- Yahoo (stock)
@@ -80,6 +188,38 @@ async function yahooQuote(symbol) {
   };
 }
 
+// -------------------------------------------------------------------- gold
+// There is no free feed for the Indian retail gold rate. Gold BeES is an
+// NSE-listed ETF holding physical gold in India, so its price already carries
+// import duty and the local premium — unlike international spot, which runs
+// several per cent below what a buyer here actually pays. One unit is about a
+// hundredth of a gram, so x100 gives rupees per gram.
+//
+// It is a market price, not a jeweller's quote: no making charges, and it can
+// sit a per cent or so either side of the rate in a shop.
+const GOLD_SYMBOL = 'GOLDBEES.NS';
+const UNITS_PER_GRAM = 100;
+
+// Purity as a fraction of pure gold: 22K is 22 parts in 24.
+const PURITY = { '24k': 1, '22k': 0.916, '18k': 0.75 };
+
+const purityKey = v => {
+  const k = String(v || '').toLowerCase().replace(/[^0-9k]/g, '');
+  return k in PURITY ? k : '24k';
+};
+
+async function goldQuote(purity) {
+  const key = purityKey(purity);
+  const base = await yahooQuote(GOLD_SYMBOL);
+  return {
+    id: key,
+    name: `Gold ${key.toUpperCase()} (per gram)`,
+    price: Math.round(base.price * UNITS_PER_GRAM * PURITY[key] * 100) / 100,
+    currency: 'INR',
+    basis: 'Nippon India ETF Gold BeES, NSE'
+  };
+}
+
 // ---------------------------------------------------------- CoinGecko (crypto)
 async function cryptoSearch(q) {
   const res = await fetch(`https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(q)}`, {
@@ -106,6 +246,10 @@ async function cryptoQuote(id) {
   return { id, name: id, price, currency: 'INR' };
 }
 
+// Exported so the search ranking and the gold maths can be unit-tested without
+// standing up the function. Vercel only ever calls the default export.
+export const __test = { normalise, within, hits, mfSearch, purityKey, PURITY, UNITS_PER_GRAM };
+
 // ------------------------------------------------------------------- handler
 export default async function handler(req, res) {
   const { action = 'search', type = 'stock', q = '', id = '' } = req.query || {};
@@ -122,16 +266,7 @@ export default async function handler(req, res) {
       if (type === 'crypto') {
         results = await cryptoSearch(term);
       } else if (type === 'mf') {
-        const needle = term.toLowerCase();
-        const seen = new Set();
-        results = [];
-        for (const s of await getAmfiSchemes()) {
-          if (!s.name.toLowerCase().includes(needle)) continue;
-          if (seen.has(s.name)) continue; // same scheme repeats per plan/option
-          seen.add(s.name);
-          results.push({ id: s.code, label: s.name, sub: `${s.plan} · NAV ₹${s.nav}` });
-          if (results.length >= 10) break;
-        }
+        results = mfSearch(await getAmfiSchemes(), term);
       } else {
         results = await yahooSearch(term);
       }
@@ -232,6 +367,20 @@ export default async function handler(req, res) {
         }
       }
 
+      // --- gold: one quote covers every row, scaled by each row's purity
+      const goldItems = items.filter(i => i.type === 'gold');
+      if (goldItems.length) {
+        try {
+          const base = await yahooQuote(GOLD_SYMBOL);
+          for (const item of goldItems) {
+            const key = purityKey(item.id);
+            prices[item.key] = Math.round(base.price * UNITS_PER_GRAM * PURITY[key] * 100) / 100;
+          }
+        } catch {
+          // leave gold showing its last known price
+        }
+      }
+
       // --- stocks: Yahoo has no reliable free batch endpoint, so fetch in parallel
       const stockItems = items.filter(i => i.type === 'stock');
       await Promise.all(stockItems.map(async item => {
@@ -249,6 +398,9 @@ export default async function handler(req, res) {
     }
 
     if (action === 'quote') {
+      // Gold needs no id: purity is optional and defaults to 24K.
+      if (type === 'gold') return res.status(200).json(await goldQuote(id));
+
       const key = String(id).trim();
       if (!key) return res.status(400).json({ error: 'id is required' });
 
