@@ -29,7 +29,10 @@ export default function ShareCardModal({ stats, onClose }) {
     setSuccessMsg('');
 
     try {
-      // html-to-image takes an exact 1:1 snapshot of the DOM element
+      // FIX 1: Prime the canvas cache (Fixes missing fonts/styles on first click)
+      await toPng(cardRef.current, { cacheBust: true, style: { margin: 0 } });
+
+      // FIX 2: Generate the actual high-res image
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 3,
@@ -82,18 +85,34 @@ export default function ShareCardModal({ stats, onClose }) {
         </button>
 
         <div className="p-6 pb-2 flex justify-center">
-          {/* EXACT TICKET PREVIEW (This entire div gets converted to image) */}
+          {/* EXACT TICKET PREVIEW */}
           <div 
             ref={cardRef} 
-            className="w-full bg-gradient-to-br from-[#0f1115] via-[#15181d] to-[#1e1c15] rounded-3xl relative overflow-hidden shadow-2xl p-6 text-white" 
-            style={{ width: '340px' }}
+            className="w-full rounded-3xl relative overflow-hidden shadow-2xl p-6 text-white" 
+            style={{ 
+              width: '340px',
+              background: 'linear-gradient(135deg, #0f1115 0%, #15181d 50%, #1e1c15 100%)',
+              fontFamily: 'Inter, system-ui, sans-serif'
+            }}
           >
             
-            <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-600/10 rounded-full blur-3xl pointer-events-none"></div>
+            {/* FIX 3: Replaced CSS Blur with Native Radial Gradient for 100% Image Compatibility */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '200px',
+              height: '200px',
+              background: 'radial-gradient(circle at top right, rgba(202, 138, 4, 0.12) 0%, transparent 60%)',
+              pointerEvents: 'none'
+            }}></div>
             
             <div>
               <div className="flex items-center gap-1.5 font-black italic tracking-wider text-lg text-white">
-                <span className="material-symbols-outlined text-primary text-2xl">insights</span>
+                {/* FIX 4: Replaced Icon Font with Inline SVG */}
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
                 MYWEALTH
               </div>
               
