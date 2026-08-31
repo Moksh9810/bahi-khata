@@ -12,7 +12,7 @@ import './index.css';
 export default function App() {
   const { user, loading: authLoading, signin, signup, logout } = useAuth();
   const {
-    portfolio, stats, addHolding, removeHolding, updateHolding,
+    portfolio, stats, addHolding, importHoldings, removeHolding, updateHolding,
     refreshPrices, pricesUpdatedAt, loaded: portfolioLoaded
   } = usePortfolio(user?.id);
   const { role, isAdmin, isRestricted, loaded: profileLoaded } = useProfile(user?.id);
@@ -93,6 +93,7 @@ export default function App() {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
       onAddHolding={addHolding}
+      onImportHoldings={importHoldings}
       onRemoveHolding={removeHolding}
       onUpdateHolding={updateHolding}
       onRefreshPrices={refreshPrices}
