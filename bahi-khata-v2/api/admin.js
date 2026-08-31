@@ -192,6 +192,26 @@ export default async function handler(req, res) {
       });
     }
 
+    // ------------------------------------------------------------ settings
+    // Reports what is configured WITHOUT ever returning a secret. Even a super
+    // admin's browser never receives the key — it only learns that one exists
+    // and what its last four characters are, which is enough to tell two keys
+    // apart when checking you pasted the right one.
+    if (action === 'settings') {
+      const rows = await rest('app_settings?select=key,value,updated_at');
+      const byKey = Object.fromEntries((rows || []).map(r => [r.key, r]));
+
+      const rp = byKey.razorpay?.value || {};
+      return res.status(200).json({
+        razorpay: {
+          configured: Boolean(rp.key_id && rp.key_secret),
+          mode: rp.mode || 'test',
+          keyIdLast4: rp.key_id ? String(rp.key_id).slice(-4) : null,
+          updatedAt: byKey.razorpay?.updated_at || null
+        }
+      });
+    }
+
     if (action === 'audit') {
       const rows = await rest('admin_audit_log?select=*&order=created_at.desc&limit=100');
       return res.status(200).json({ entries: rows || [] });
@@ -200,6 +220,56 @@ export default async function handler(req, res) {
     // --------------------------------------------------------------- writes
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Changes must be sent as POST' });
+    }
+
+    // Saving payment credentials. Super admin only, and the values go straight
+    // into a table no client can read back.
+    if (action === 'set_razorpay') {
+      if (me.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Only a super admin can change payment settings' });
+      }
+
+      const { keyId, keySecret, mode } = req.body || {};
+      const id = String(keyId || '').trim();
+      const secret = String(keySecret || '').trim();
+      const useMode = mode === 'live' ? 'live' : 'test';
+
+      // Clearing is a legitimate action — it switches payments off.
+      if (!id && !secret) {
+        await rest('app_settings?key=eq.razorpay', { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
+        await writeAudit(me, 'set_razorpay', null, { cleared: true });
+        return res.status(200).json({ ok: true, configured: false });
+      }
+
+      if (!id || !secret) {
+        return res.status(400).json({ error: 'Both the Key ID and the Key Secret are needed.' });
+      }
+      // Razorpay key ids look like rzp_test_xxx or rzp_live_xxx. Catching a
+      // paste of the wrong field here saves a confusing failure at checkout.
+      if (!/^rzp_(test|live)_/.test(id)) {
+        return res.status(400).json({ error: 'That does not look like a Razorpay Key ID — it should start with rzp_test_ or rzp_live_.' });
+      }
+      if (id.startsWith('rzp_live_') && useMode !== 'live') {
+        return res.status(400).json({ error: 'That is a live key. Switch the mode to Live before saving it.' });
+      }
+      if (id.startsWith('rzp_test_') && useMode === 'live') {
+        return res.status(400).json({ error: 'That is a test key, so the mode must be Test.' });
+      }
+
+      await rest('app_settings', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+        body: JSON.stringify([{
+          key: 'razorpay',
+          value: { key_id: id, key_secret: secret, mode: useMode },
+          updated_at: new Date().toISOString(),
+          updated_by: me.id
+        }])
+      });
+
+      // The secret itself never reaches the audit log either.
+      await writeAudit(me, 'set_razorpay', null, { mode: useMode, keyIdLast4: id.slice(-4) });
+      return res.status(200).json({ ok: true, configured: true, mode: useMode, keyIdLast4: id.slice(-4) });
     }
 
     const { userId, value } = req.body || {};
