@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { holdingsService } from '../services/supabase';
 import { usePortfolioStore } from '../store/portfolioStore';
 
+/** "22K chain" -> "22k". Unmarked gold is taken as 24K. */
+const purityOf = name => {
+  const m = String(name || '').match(/\b(24|22|18)\s*k\b/i);
+  return m ? `${m[1]}k` : '24k';
+};
+
 export const usePortfolio = (userId, portfolioId = null) => {
   const portfolio = usePortfolioStore(state => state.portfolio);
   const setPortfolio = usePortfolioStore(state => state.setPortfolio);
@@ -124,31 +130,38 @@ export const usePortfolio = (userId, portfolioId = null) => {
   };
 
   // ---- live prices -------------------------------------------------------
-  // Which buckets can be priced, and where the price belongs in each row.
+  // Which buckets can be priced, where the price belongs in each row, and how
+  // to work out what to ask the feed for.
+  //
+  // quote_id is set when the holding is picked from search. Rows added before
+  // that existed fall back to whatever name we have.
   const PRICED = {
-    stocks: { source: 'stock', field: 'current_price' },
-    mf: { source: 'mf', field: 'current_nav' },
-    crypto: { source: 'crypto', field: 'current_price' }
+    stocks: { source: 'stock', field: 'current_price', idOf: h => h.quote_id || h.symbol },
+    mf: { source: 'mf', field: 'current_nav', idOf: h => h.quote_id || h.scheme },
+    crypto: { source: 'crypto', field: 'current_price', idOf: h => h.quote_id || h.symbol },
+    // Gold is priced per gram, so the only thing the feed needs is the purity.
+    // "22K chain" gives 22k; anything unmarked is treated as 24K, which is how
+    // bullion, coins and sovereign bonds are quoted.
+    gold: { source: 'gold', field: 'current_price', idOf: h => purityOf(h.name) }
   };
 
   const refreshPrices = async () => {
     const current = usePortfolioStore.getState().portfolio;
 
     // Build one request key per holding: "stock:TCS.NS", "mf:120503", ...
-    const items = [];
+    const items = new Set();
     for (const [bucket, cfg] of Object.entries(PRICED)) {
       for (const h of current[bucket] || []) {
-        // quote_id is set when the holding is picked from search. Rows added
-        // before that existed fall back to whatever name we have.
-        const id = h.quote_id || h.symbol || h.scheme;
-        if (id) items.push(`${cfg.source}:${id}`);
+        const id = cfg.idOf(h);
+        // A Set, because every 24K gold row asks the feed the same question.
+        if (id) items.add(`${cfg.source}:${id}`);
       }
     }
-    if (!items.length) return;
+    if (!items.size) return;
 
     let prices;
     try {
-      const res = await fetch(`/api/market?action=quotes&items=${encodeURIComponent(items.join('|'))}`);
+      const res = await fetch(`/api/market?action=quotes&items=${encodeURIComponent([...items].join('|'))}`);
       if (!res.ok) return;
       ({ prices } = await res.json());
     } catch {
@@ -159,7 +172,7 @@ export const usePortfolio = (userId, portfolioId = null) => {
     const updated = { ...current };
     for (const [bucket, cfg] of Object.entries(PRICED)) {
       updated[bucket] = (current[bucket] || []).map(h => {
-        const id = h.quote_id || h.symbol || h.scheme;
+        const id = cfg.idOf(h);
         const p = prices[`${cfg.source}:${id}`];
         return typeof p === 'number' ? { ...h, [cfg.field]: p } : h;
       });
