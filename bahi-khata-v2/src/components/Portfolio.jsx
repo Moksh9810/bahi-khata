@@ -1,296 +1,157 @@
 import { useState } from 'react';
-import { formatCurrency } from '../utils/formatters';
-import { formSchemas, assetTypeLabels } from '../utils/formSchemas';
-import AssetSearch from './AssetSearch';
-import ImportHoldings from './ImportHoldings';
-import { groupHoldingsForDisplay, calculateAssetCurrentValue, generatePayoutHistory } from '../utils/calculations';
-import { holdingsService } from '../services/supabase';
-import { usePortfolioStore } from '../store/portfolioStore';
+import { formatCurrency, formatPercent } from '../utils/formatters';
+import { calculateAssetCurrentValue, calculateAssetPL } from '../utils/calculations';
+import TransactionHistoryModal from './TransactionHistoryModal';
 
-const SEARCHABLE = {
-  stocks: { source: 'stock', nameField: 'symbol', priceField: 'current_price' },
-  mf: { source: 'mf', nameField: 'scheme', priceField: 'current_nav' },
-  crypto: { source: 'crypto', nameField: 'symbol', priceField: 'current_price' }
-};
+export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRemove, onUpdate }) {
+  const [showHistoryModal, setShowHistoryModal] = useState(null);
 
-export default function Portfolio({ type, holdings, onAdd, onRemove, onImport }) {
-  const [showModal, setShowModal] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [errors, setErrors] = useState({});
-  const [editingId, setEditingId] = useState(null);
-
-  const updateHoldingInStore = usePortfolioStore(state => state.updateHolding);
-  const labels = assetTypeLabels;
-  const displayHoldings = groupHoldingsForDisplay(holdings, type);
-
-  const validateForm = () => {
-    const schema = formSchemas[type];
-    const newErrors = {};
-
-    schema.forEach(field => {
-      const isFixedPayout = formData.payout_frequency?.includes('Fixed') || formData.payout_frequency?.includes('EMI');
-      if (type === 'loans') {
-        if (field.name === 'interest_rate' && isFixedPayout) return;
-        if (field.name === 'payout_amount' && !isFixedPayout) return;
-      }
-
-      if (field.required && !formData[field.name]) {
-        newErrors[field.name] = `${field.label} is required`;
-      }
-    });
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  // Asset configuration dictionary
+  const config = {
+    stocks: { title: 'Stocks', icon: 'show_chart', showAveraging: true },
+    mf: { title: 'Mutual Funds', icon: 'account_balance', showAveraging: true },
+    crypto: { title: 'Crypto', icon: 'currency_bitcoin', showAveraging: true },
+    gold: { title: 'Gold', icon: 'diamond', showAveraging: true },
+    bonds: { title: 'Bonds', icon: 'payments', showAveraging: false },
+    loans: { title: 'Loans', icon: 'real_estate_agent', showAveraging: false },
+    properties: { title: 'Properties', icon: 'apartment', showAveraging: false },
+    fds: { title: 'Fixed Deposits', icon: 'savings', showAveraging: false }
   };
 
-  const handleAddSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    try {
-      if (editingId) {
-        const updated = await holdingsService.updateHolding(editingId, formData);
-        updateHoldingInStore(type, editingId, updated);
-      } else {
-        await onAdd(type, formData);
-      }
-      closeModal();
-    } catch (error) {
-      console.error('Error saving holding:', error);
-      setErrors({ submit: error.message || 'Failed to save holding' });
-    }
-  };
-
-  const handleEdit = (holding) => {
-    setFormData(holding);
-    setEditingId(holding.id);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setFormData({});
-    setErrors({});
-    setEditingId(null);
-  };
-
-  const handleAssetPicked = (asset) => {
-    const cfg = SEARCHABLE[type];
-    if (!cfg) return;
-
-    let nameValue;
-    if (cfg.source === 'stock') nameValue = String(asset.id).replace(/\.(NS|BO)$/, '');
-    else if (cfg.source === 'crypto') nameValue = asset.sub || asset.name;
-    else nameValue = asset.name;
-
-    setFormData(prev => ({
-      ...prev,
-      [cfg.nameField]: nameValue,
-      quote_id: asset.id,
-      ...(asset.price != null ? { [cfg.priceField]: asset.price } : {})
-    }));
-
-    setErrors(prev => ({ ...prev, [cfg.nameField]: undefined }));
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, type: inputType } = e.target;
-    const parsedValue = inputType === 'number' ? (value ? parseFloat(value) : '') : value;
-
-    setFormData(prev => {
-      const next = { ...prev, [name]: parsedValue };
-      if (name === 'payout_frequency') {
-        const isFixed = value.includes('Fixed') || value.includes('EMI');
-        if (isFixed) {
-          next.interest_rate = null; 
-        } else {
-          next.payout_amount = null; 
-        }
-      }
-      return next;
-    });
-
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+  const currentConfig = config[type] || config.stocks;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface">{labels[type]}s</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Manage your {labels[type].toLowerCase()}s</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setShowImport(true)} className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-primary border border-outline-variant hover:bg-primary/10 transition-all">
-            <span className="material-symbols-outlined">upload_file</span> Import
-          </button>
-          <button onClick={() => { setEditingId(null); setShowModal(true); }} className="flex items-center justify-center gap-2 px-6 py-2 rounded-lg bg-primary text-on-primary font-label-sm font-bold hover:bg-blue-700 transition-all">
-            <span className="material-symbols-outlined">add</span> Add {labels[type]}
-          </button>
-        </div>
-      </div>
-
-      {showImport && (
-        <ImportHoldings type={type} onImport={onImport} onClose={() => setShowImport(false)} />
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {displayHoldings.length === 0 ? (
-          <div className="col-span-full text-center py-12">
-            <p className="text-on-surface-variant">No {labels[type].toLowerCase()}s added yet</p>
+      
+      {/* HEADER SECTION */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-outline-variant/30 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-primary/10 text-primary rounded-xl">
+            <span className="material-symbols-outlined text-2xl">{currentConfig.icon}</span>
           </div>
-        ) : (
-          displayHoldings.map((h) => (
-            <div key={h.id || h.name} className="card p-5 flex flex-col gap-4">
-              <div>
-                <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">{h.symbol || h.scheme || h.name}</h3>
-              </div>
-              <div className="py-3 border-y border-outline-variant space-y-2">
-                {type === 'stocks' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Qty: <span className="font-data-lg">{h.quantity}</span></p>
-                    <p className="text-on-surface-variant text-sm">Avg Buy Price: <span className="font-data-lg">{formatCurrency(h.buy_price)}</span></p>
-                    {h.current_price && <p className="text-on-surface-variant text-sm">Current: <span className="font-data-lg">{formatCurrency(h.current_price)}</span></p>}
-                  </>
-                )}
+          <div>
+            <h2 className="font-headline-lg text-headline-lg text-on-surface">{currentConfig.title}</h2>
+            <p className="text-on-surface-variant text-sm mt-1">{holdings?.length || 0} Assets tracked</p>
+          </div>
+        </div>
 
-                {type === 'mf' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Total Units: <span className="font-data-lg">{Number(h.units || 0).toFixed(3)}</span></p>
-                    <p className="text-on-surface-variant text-sm">Avg Buy NAV: <span className="font-data-lg">{formatCurrency(h.buy_nav)}</span></p>
-                    {h.current_nav && <p className="text-on-surface-variant text-sm">Current NAV: <span className="font-data-lg">{formatCurrency(h.current_nav)}</span></p>}
-                  </>
-                )}
-
-                {type === 'bonds' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Face Value: <span className="font-data-lg">{formatCurrency(h.quantity)}</span></p>
-                    <p className="text-on-surface-variant text-sm">Buy Price: <span className="font-data-lg">{formatCurrency(h.buy_price)}</span></p>
-                    {h.interest_rate && <p className="text-on-surface-variant text-sm">Interest: <span className="font-data-lg">{h.interest_rate}% ({h.payout_frequency})</span></p>}
-                    <div className="pt-2 mt-2 border-t border-outline-variant/50">
-                      <p className="text-emerald-500 font-medium text-sm">Valuation + Profit: <span className="font-data-lg">{formatCurrency(calculateAssetCurrentValue(h, 'bonds'))}</span></p>
-                    </div>
-                  </>
-                )}
-
-                {type === 'loans' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Amount: <span className="font-data-lg">{formatCurrency(h.quantity)}</span></p>
-                    {h.interest_rate ? <p className="text-on-surface-variant text-sm">Rate: <span className="font-data-lg">{h.interest_rate}%</span></p> : null}
-                    {h.payout_amount ? <p className="text-on-surface-variant text-sm">Payout: <span className="font-data-lg">{formatCurrency(h.payout_amount)} ({h.payout_frequency})</span></p> : null}
-                    <div className="pt-2 mt-2 border-t border-outline-variant/50">
-                      <p className="text-emerald-500 font-medium text-sm">Total Return Due: <span className="font-data-lg">{formatCurrency(calculateAssetCurrentValue(h, 'loans'))}</span></p>
-                      
-                      {h.payout_amount && (
-                        <details className="group mt-2">
-                          <summary className="text-primary font-medium text-sm cursor-pointer list-none flex items-center gap-1 select-none">
-                            <span className="material-symbols-outlined text-[18px] group-open:rotate-180 transition-transform">expand_more</span>
-                            View Payout History
-                          </summary>
-                          <div className="mt-2 space-y-1 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
-                            {generatePayoutHistory(h).length > 0 ? (
-                              generatePayoutHistory(h).map((payout, idx) => (
-                                <div key={idx} className="flex justify-between items-center text-xs py-1 border-b border-outline-variant/20 last:border-0">
-                                  <span className="text-on-surface-variant">{payout.date}</span>
-                                  <span className="text-emerald-500 font-medium">+{formatCurrency(payout.amount)}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <p className="text-xs text-on-surface-variant italic">No payouts due yet.</p>
-                            )}
-                          </div>
-                        </details>
-                      )}
-                    </div>
-                  </>
-                )}
-
-                {type === 'crypto' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Amount: <span className="font-data-lg">{Number(h.quantity || 0).toFixed(8)}</span></p>
-                    <p className="text-on-surface-variant text-sm">Avg Buy Price: <span className="font-data-lg">{formatCurrency(h.buy_price)}</span></p>
-                    {h.current_price && <p className="text-on-surface-variant text-sm">Current: <span className="font-data-lg">{formatCurrency(h.current_price)}</span></p>}
-                  </>
-                )}
-
-                {type === 'gold' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Qty: <span className="font-data-lg">{h.quantity}g</span></p>
-                    <p className="text-on-surface-variant text-sm">Buy: <span className="font-data-lg">{formatCurrency(h.buy_price)}/g</span></p>
-                    {h.current_price && <p className="text-on-surface-variant text-sm">Current: <span className="font-data-lg">{formatCurrency(h.current_price)}/g</span></p>}
-                  </>
-                )}
-
-                {type === 'properties' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Purchase: <span className="font-data-lg">{formatCurrency(h.quantity)}</span></p>
-                    <p className="text-on-surface-variant text-sm">Current Value: <span className="font-data-lg">{formatCurrency(h.buy_price)}</span></p>
-                    {h.rental_income && <p className="text-on-surface-variant text-sm">Monthly Rent: <span className="font-data-lg">{formatCurrency(h.rental_income)}</span></p>}
-                  </>
-                )}
-
-                {type === 'fds' && (
-                  <>
-                    <p className="text-on-surface-variant text-sm">Amount: <span className="font-data-lg">{formatCurrency(h.quantity)}</span></p>
-                    <p className="text-on-surface-variant text-sm">Rate: <span className="font-data-lg">{h.buy_price}%</span></p>
-                  </>
-                )}
-              </div>
-              <div className="flex gap-1 mt-auto">
-                <button onClick={() => handleEdit(h)} className="p-2 text-on-surface-variant hover:text-primary transition-colors">
-                  <span className="material-symbols-outlined">edit</span>
-                </button>
-                <button onClick={() => onRemove(h.id, type)} className="p-2 text-on-surface-variant hover:text-error transition-colors">
-                  <span className="material-symbols-outlined">delete</span>
-                </button>
-              </div>
-            </div>
-          ))
-        )}
+        <div className="flex gap-3">
+          {onImport && ['stocks', 'mf'].includes(type) && (
+            <button 
+              onClick={() => onImport(type)}
+              className="px-4 py-2 rounded-lg border border-primary/30 text-primary hover:bg-primary/10 transition-all font-bold text-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined">upload_file</span>
+              Import File
+            </button>
+          )}
+          <button 
+            onClick={() => onAdd(type)}
+            className="btn-primary py-2 px-5 flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined">add</span>
+            Add Manual
+          </button>
+        </div>
       </div>
 
-      {showModal && (
-        <div className="fixed inset-0 bg-slate-900/40 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-surface rounded-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="font-headline-lg text-headline-lg text-on-surface mb-6">{editingId ? 'Edit' : 'Add'} {labels[type]}</h2>
-            <form onSubmit={handleAddSubmit} className="space-y-4">
-              {formSchemas[type].map(field => {
-                const isFixedPayout = formData.payout_frequency?.includes('Fixed') || formData.payout_frequency?.includes('EMI');
-                if (type === 'loans') {
-                  if (field.name === 'interest_rate' && isFixedPayout) return null;
-                  if (field.name === 'payout_amount' && !isFixedPayout) return null;
-                }
+      {/* HOLDINGS LIST */}
+      {!holdings || holdings.length === 0 ? (
+        <div className="card p-12 text-center border-dashed border-2 border-outline-variant">
+          <span className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">{currentConfig.icon}</span>
+          <h3 className="text-xl font-bold text-on-surface mb-2">No {currentConfig.title} Yet</h3>
+          <p className="text-on-surface-variant mb-6">Add your first asset manually or import from a statement.</p>
+          <button onClick={() => onAdd(type)} className="btn-primary py-2 px-6">Add Now</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {holdings.map((item, index) => {
+            
+            // Universal calculations based on asset type
+            const invested = (item.quantity || item.units || 1) * (item.buy_price || item.buy_nav || item.invested_amount || 0);
+            const current = calculateAssetCurrentValue(item, type);
+            const { pl, pct } = calculateAssetPL(invested, current);
+            const isPositive = pl >= 0;
 
-                return (
-                  <div key={field.name}>
-                    {SEARCHABLE[type] && SEARCHABLE[type].nameField === field.name ? (
-                      <AssetSearch type={SEARCHABLE[type].source} value={formData[field.name] || ''} placeholder={field.placeholder} onSelect={handleAssetPicked} />
-                    ) : field.type === 'select' ? (
-                      <select name={field.name} value={formData[field.name] || ''} onChange={handleInputChange} className={`w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 bg-transparent ${errors[field.name] ? 'ring-2 ring-error' : 'focus:ring-primary'}`} required={field.required}>
-                        <option value="" disabled>Select {field.label}</option>
-                        {field.options.map(opt => (
-                          <option key={opt} value={opt} className="bg-surface text-on-surface">{opt}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <input type={field.type} name={field.name} placeholder={field.placeholder} value={formData[field.name] || ''} onChange={handleInputChange} step={field.step} className={`w-full card px-4 py-3 text-on-surface focus:outline-none focus:ring-2 ${errors[field.name] ? 'focus:ring-error ring-2 ring-error' : 'focus:ring-primary'}`} required={field.required} />
-                    )}
-                    {errors[field.name] && <p className="text-error text-xs mt-1">{errors[field.name]}</p>}
+            return (
+              <div key={item.id || index} className="card p-5 hover:ring-2 hover:ring-primary/40 transition-all flex flex-col justify-between">
+                
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-lg text-on-surface">{item.name || item.symbol}</h3>
+                    <p className="text-xs text-on-surface-variant uppercase tracking-widest mt-1">
+                      {type === 'mf' ? `${item.units} UNITS` : `${item.quantity || 1} QTY`}
+                    </p>
                   </div>
-                );
-              })}
-              {errors.submit && <div className="text-error text-sm p-3 rounded-lg bg-error/10">{errors.submit}</div>}
-              <div className="flex gap-3">
-                <button type="submit" className="flex-1 btn-primary w-full py-3">{editingId ? 'Update' : 'Save'}</button>
-                <button type="button" onClick={closeModal} className="flex-1 py-3 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container transition-all">Cancel</button>
+                  
+                  {/* Action Buttons (History, Edit, Delete) */}
+                  <div className="flex items-center gap-1 bg-surface-container rounded-lg p-1">
+                    
+                    {/* ONLY SHOW HISTORY BUTTON FOR ASSETS THAT SUPPORT AVERAGING */}
+                    {currentConfig.showAveraging && (
+                      <button 
+                        onClick={() => setShowHistoryModal(item)}
+                        className="p-1.5 text-primary hover:bg-primary/20 rounded-md transition-colors"
+                        title="View Ledger / History"
+                      >
+                        <span className="material-symbols-outlined text-sm">history</span>
+                      </button>
+                    )}
+
+                    <button 
+                      onClick={() => onUpdate(type, item)}
+                      className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-on-surface/10 rounded-md transition-colors"
+                      title="Edit"
+                    >
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
+
+                    <button 
+                      onClick={() => onRemove(type, item.id)}
+                      className="p-1.5 text-error hover:bg-error/10 rounded-md transition-colors"
+                      title="Delete"
+                    >
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-2 p-3 bg-surface-container/30 rounded-xl border border-outline-variant/30">
+                  <div>
+                    <p className="text-[11px] text-on-surface-variant uppercase">Avg Buy Price</p>
+                    <p className="font-bold text-on-surface text-sm mt-0.5">{formatCurrency(item.buy_price || item.buy_nav || invested)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-on-surface-variant uppercase">Current Price</p>
+                    <p className="font-bold text-on-surface text-sm mt-0.5">{formatCurrency(item.current_price || item.current_nav || current)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-on-surface-variant uppercase">Invested Value</p>
+                    <p className="font-bold text-on-surface mt-0.5">{formatCurrency(invested)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-on-surface-variant uppercase">Current Value</p>
+                    <p className={`font-bold mt-0.5 ${isPositive ? 'text-success' : 'text-error'}`}>
+                      {formatCurrency(current)}
+                    </p>
+                  </div>
+                </div>
+
               </div>
-            </form>
-          </div>
+            );
+          })}
         </div>
       )}
+
+      {/* RENDER HISTORY MODAL IF ACTIVE */}
+      {showHistoryModal && (
+        <TransactionHistoryModal 
+          item={showHistoryModal} 
+          type={type} 
+          onClose={() => setShowHistoryModal(null)} 
+        />
+      )}
+
     </div>
   );
 }
