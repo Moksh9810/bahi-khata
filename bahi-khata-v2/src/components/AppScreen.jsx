@@ -27,6 +27,7 @@ export default function AppScreen({
   myRole,
   isPro,
   onCheckout,
+  paymentsAvailable,
   onLogout
 }) {
   const [navOpen, setNavOpen] = useState(false);
@@ -172,7 +173,7 @@ export default function AppScreen({
         )}
 
         {activeTab === 'pricing' && (
-          <PricingPage plan={isPro ? 'pro' : 'free'} onCheckout={onCheckout} />
+          <PricingPage plan={isPro ? 'pro' : 'free'} onCheckout={onCheckout} paymentsAvailable={paymentsAvailable} />
         )}
 
         {activeTab === 'admin' && isAdmin && (

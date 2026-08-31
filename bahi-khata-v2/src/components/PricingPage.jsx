@@ -5,7 +5,7 @@ import { PLANS, normalisePlan, yearlySaving } from '../utils/plans';
 // rupees as well as a percentage, and the current plan is marked so nobody
 // pays twice for what they already have.
 
-export default function PricingPage({ plan, onCheckout }) {
+export default function PricingPage({ plan, onCheckout, paymentsAvailable }) {
   const [cycle, setCycle] = useState('yearly');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -119,9 +119,21 @@ export default function PricingPage({ plan, onCheckout }) {
               Your current plan
             </button>
           ) : (
-            <button onClick={start} disabled={busy} className="btn-primary w-full mt-6">
-              {busy ? 'Opening checkout…' : `Upgrade — ₹${proPrice}`}
+            <button
+              onClick={start}
+              disabled={busy || paymentsAvailable === false}
+              className="btn-primary w-full mt-6"
+            >
+              {paymentsAvailable === false
+                ? 'Payments opening soon'
+                : busy ? 'Opening checkout…' : `Upgrade — ₹${proPrice}`}
             </button>
+          )}
+
+          {paymentsAvailable === false && (
+            <p className="text-on-surface-variant text-sm mt-3">
+              Card payments are not switched on yet. Everything on the free plan keeps working.
+            </p>
           )}
 
           {error && <p className="text-error text-sm mt-3">{error}</p>}

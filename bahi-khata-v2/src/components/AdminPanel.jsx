@@ -44,6 +44,126 @@ function Stat({ label, value, hint }) {
   );
 }
 
+function RazorpaySettings({ status, canEdit, onSaved, onError }) {
+  const [keyId, setKeyId] = useState('');
+  const [keySecret, setKeySecret] = useState('');
+  const [mode, setMode] = useState('test');
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState('');
+
+  const save = async (clear = false) => {
+    setBusy(true);
+    setSaved('');
+    onError('');
+    try {
+      await callAdmin('set_razorpay', clear
+        ? { keyId: '', keySecret: '' }
+        : { keyId: keyId.trim(), keySecret: keySecret.trim(), mode });
+      // Never keep the secret in browser memory a moment longer than needed.
+      setKeyId('');
+      setKeySecret('');
+      setSaved(clear ? 'Payments switched off.' : 'Saved. Checkout is live from now on.');
+      await onSaved();
+    } catch (e) {
+      onError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6 max-w-2xl">
+      <div className="card p-6">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Razorpay</h3>
+            <p className="text-on-surface-variant text-sm mt-1">
+              Paste the keys from your Razorpay dashboard. Checkout starts working the moment
+              you save — nothing needs redeploying.
+            </p>
+          </div>
+          <span className={`badge ${status?.configured ? 'badge-credit' : 'badge-pending'}`}>
+            {status?.configured ? `live · ${status.mode}` : 'not set up'}
+          </span>
+        </div>
+
+        {status?.configured && (
+          <p className="text-on-surface-variant text-sm mb-4">
+            Currently using a key ending <span className="font-data-lg">…{status.keyIdLast4}</span> in{' '}
+            <strong className="text-on-surface">{status.mode}</strong> mode.
+            The secret cannot be shown again — save a new pair to replace it.
+          </p>
+        )}
+
+        {!canEdit ? (
+          <p className="text-on-surface-variant text-sm">
+            Only a super admin can change payment settings.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <label className="text-sm">
+              <span className="block text-on-surface-variant mb-1">Mode</span>
+              <select value={mode} onChange={e => setMode(e.target.value)} className="input-field">
+                <option value="test">Test — no real money</option>
+                <option value="live">Live — real payments</option>
+              </select>
+            </label>
+
+            <label className="text-sm">
+              <span className="block text-on-surface-variant mb-1">Key ID</span>
+              <input
+                value={keyId}
+                onChange={e => setKeyId(e.target.value)}
+                placeholder="rzp_test_xxxxxxxxxxxx"
+                autoComplete="off"
+                className="input-field font-mono"
+              />
+            </label>
+
+            <label className="text-sm">
+              <span className="block text-on-surface-variant mb-1">Key Secret</span>
+              <input
+                type="password"
+                value={keySecret}
+                onChange={e => setKeySecret(e.target.value)}
+                placeholder="never shown again once saved"
+                autoComplete="new-password"
+                className="input-field font-mono"
+              />
+            </label>
+
+            <div className="flex gap-3 flex-wrap">
+              <button
+                onClick={() => save(false)}
+                disabled={busy || !keyId.trim() || !keySecret.trim()}
+                className="btn-primary"
+              >
+                {busy ? 'Saving…' : 'Save and switch on'}
+              </button>
+              {status?.configured && (
+                <button onClick={() => save(true)} disabled={busy} className="btn-secondary">
+                  Switch payments off
+                </button>
+              )}
+            </div>
+
+            {saved && <p className="text-success text-sm">{saved}</p>}
+          </div>
+        )}
+      </div>
+
+      <div className="card p-5">
+        <p className="text-on-surface-variant text-sm">
+          <strong className="text-on-surface">Where these are kept.</strong> The secret goes into a
+          database table that no browser can read — not yours either. It is used only on the
+          server, to check that a payment really happened. It is never sent back to any page,
+          and never written to the audit log.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminPanel({ myRole }) {
   const [tab, setTab] = useState('users');
   const [users, setUsers] = useState([]);
@@ -53,6 +173,7 @@ export default function AdminPanel({ myRole }) {
   const [busyId, setBusyId] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState(null);
 
   const canChangePlan = ['manager', 'super_admin'].includes(myRole);
   const canChangeRole = myRole === 'super_admin';
@@ -76,6 +197,11 @@ export default function AdminPanel({ myRole }) {
   useEffect(() => {
     if (tab !== 'audit') return;
     callAdmin('audit').then(r => setAudit(r.entries || [])).catch(e => setError(e.message));
+  }, [tab]);
+
+  useEffect(() => {
+    if (tab !== 'settings') return;
+    callAdmin('settings').then(setSettings).catch(e => setError(e.message));
   }, [tab]);
 
   const change = async (userId, action, value) => {
@@ -102,7 +228,7 @@ export default function AdminPanel({ myRole }) {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="font-headline-lg text-headline-lg text-on-surface">Admin</h2>
         <div className="flex gap-2">
-          {['users', 'metrics', 'audit'].map(t => (
+          {['users', 'metrics', 'audit', 'settings'].map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -253,6 +379,16 @@ export default function AdminPanel({ myRole }) {
             )}
           </div>
         </>
+      )}
+
+      {/* --------------------------------------------------------- SETTINGS */}
+      {!loading && tab === 'settings' && (
+        <RazorpaySettings
+          status={settings?.razorpay}
+          canEdit={myRole === 'super_admin'}
+          onSaved={() => callAdmin('settings').then(setSettings)}
+          onError={setError}
+        />
       )}
 
       {/* ------------------------------------------------------------ AUDIT */}
