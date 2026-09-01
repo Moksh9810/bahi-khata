@@ -1,5 +1,6 @@
 {
   "name": "mywealth",
+  "description": "Investment Portfolio Tracker - Track, analyze, and grow your wealth",
   "private": true,
   "version": "1.0.0",
   "type": "module",
