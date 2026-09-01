@@ -4,9 +4,36 @@ import { calculateAssetCurrentValue, calculateAssetPL } from '../utils/calculati
 import TransactionHistoryModal from './TransactionHistoryModal';
 import CASImportModal from './CASImportModal';
 
-export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRemove, onUpdate }) {
+export default function Portfolio(props) {
+  const { type, holdings, stats } = props;
   const [showHistoryModal, setShowHistoryModal] = useState(null);
   const [showCASModal, setShowCASModal] = useState(false);
+
+  // UNIVERSAL HANDLERS - Yeh kisi bhi naam ko catch kar lenge
+  const handleAddClick = () => {
+    if (props.onAddHolding) props.onAddHolding(type);
+    else if (props.onAdd) props.onAdd(type);
+    else if (props.onAddAsset) props.onAddAsset(type);
+  };
+
+  const handleEditClick = (item) => {
+    if (props.onUpdateHolding) props.onUpdateHolding(type, item);
+    else if (props.onUpdate) props.onUpdate(type, item);
+    else if (props.onEdit) props.onEdit(item);
+  };
+
+  const handleDeleteClick = (id) => {
+    if (props.onRemoveHolding) props.onRemoveHolding(type, id);
+    else if (props.onRemove) props.onRemove(type, id);
+    else if (props.onDelete) props.onDelete(id);
+  };
+
+  const handleImportSuccess = (funds) => {
+    funds.forEach(fund => {
+      if (props.onAddHolding) props.onAddHolding('mf', fund);
+      else if (props.onAdd) props.onAdd('mf', fund);
+    });
+  };
 
   const config = {
     stocks: { title: 'Stocks', icon: 'show_chart', showAveraging: true },
@@ -47,7 +74,7 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
             </button>
           )}
           <button 
-            onClick={() => onAdd(type)}
+            onClick={handleAddClick}
             className="btn-primary py-2 px-5 flex items-center gap-2"
           >
             <span className="material-symbols-outlined">add</span>
@@ -62,12 +89,11 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
           <span className="material-symbols-outlined text-6xl text-on-surface-variant/40 mb-4">{currentConfig.icon}</span>
           <h3 className="text-xl font-bold text-on-surface mb-2">No {currentConfig.title} Yet</h3>
           <p className="text-on-surface-variant mb-6">Add your first asset manually or import from a statement.</p>
-          <button onClick={() => onAdd(type)} className="btn-primary py-2 px-6">Add Now</button>
+          <button onClick={handleAddClick} className="btn-primary py-2 px-6">Add Now</button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {holdings.map((item, index) => {
-            
             const invested = (item.quantity || item.units || 1) * (item.buy_price || item.buy_nav || item.invested_amount || 0);
             const current = calculateAssetCurrentValue(item, type);
             const { pl } = calculateAssetPL(invested, current);
@@ -75,7 +101,6 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
 
             return (
               <div key={item.id || index} className="card p-5 hover:ring-2 hover:ring-primary/40 transition-all flex flex-col justify-between">
-                
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="font-bold text-lg text-on-surface">{item.name || item.symbol}</h3>
@@ -86,26 +111,14 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
                   
                   <div className="flex items-center gap-1 bg-surface-container rounded-lg p-1">
                     {currentConfig.showAveraging && (
-                      <button 
-                        onClick={() => setShowHistoryModal(item)}
-                        className="p-1.5 text-primary hover:bg-primary/20 rounded-md transition-colors"
-                        title="View Ledger / History"
-                      >
+                      <button onClick={() => setShowHistoryModal(item)} className="p-1.5 text-primary hover:bg-primary/20 rounded-md transition-colors" title="History">
                         <span className="material-symbols-outlined text-sm">history</span>
                       </button>
                     )}
-                    <button 
-                      onClick={() => onUpdate(type, item)}
-                      className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-on-surface/10 rounded-md transition-colors"
-                      title="Edit"
-                    >
+                    <button onClick={() => handleEditClick(item)} className="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-on-surface/10 rounded-md transition-colors" title="Edit">
                       <span className="material-symbols-outlined text-sm">edit</span>
                     </button>
-                    <button 
-                      onClick={() => onRemove(type, item.id)}
-                      className="p-1.5 text-error hover:bg-error/10 rounded-md transition-colors"
-                      title="Delete"
-                    >
+                    <button onClick={() => handleDeleteClick(item.id)} className="p-1.5 text-error hover:bg-error/10 rounded-md transition-colors" title="Delete">
                       <span className="material-symbols-outlined text-sm">delete</span>
                     </button>
                   </div>
@@ -126,35 +139,22 @@ export default function Portfolio({ type, holdings, stats, onAdd, onImport, onRe
                   </div>
                   <div>
                     <p className="text-[11px] text-on-surface-variant uppercase">Current Value</p>
-                    <p className={`font-bold mt-0.5 ${isPositive ? 'text-success' : 'text-error'}`}>
-                      {formatCurrency(current)}
-                    </p>
+                    <p className={`font-bold mt-0.5 ${isPositive ? 'text-success' : 'text-error'}`}>{formatCurrency(current)}</p>
                   </div>
                 </div>
-
               </div>
             );
           })}
         </div>
       )}
 
-      {/* RENDER HISTORY MODAL */}
+      {/* MODALS */}
       {showHistoryModal && (
-        <TransactionHistoryModal 
-          item={showHistoryModal} 
-          type={type} 
-          onClose={() => setShowHistoryModal(null)} 
-        />
+        <TransactionHistoryModal item={showHistoryModal} type={type} onClose={() => setShowHistoryModal(null)} />
       )}
 
-      {/* RENDER CAS IMPORT MODAL */}
       {showCASModal && (
-        <CASImportModal 
-          onClose={() => setShowCASModal(false)}
-          onImportSuccess={(funds) => {
-            funds.forEach(fund => onAdd('mf', fund)); 
-          }}
-        />
+        <CASImportModal onClose={() => setShowCASModal(false)} onImportSuccess={handleImportSuccess} />
       )}
 
     </div>
